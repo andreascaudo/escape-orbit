@@ -157,24 +157,40 @@ class Game {
     }
 
     createPlanets() {
+        // Create the center of the solar system (the Sun)
         const centerX = this.width / 2;
         const centerY = this.height / 2;
 
+        // Create the Sun
+        this.sun = new Sun({
+            name: CONSTANTS.SUN.name,
+            radius: CONSTANTS.SUN.radius,
+            color: CONSTANTS.SUN.color,
+            x: centerX,
+            y: centerY
+        });
+
+        // Add the Sun to the stage
+        this.gameContainer.addChild(this.sun.sprite);
+
         // Create planets based on constants
         CONSTANTS.PLANETS.forEach((planetData, index) => {
-            // Position planets in a row from left to right
-            const x = centerX + (index - CONSTANTS.STARTING_PLANET) *
-                (this.width * CONSTANTS.PLANET_DISTANCE_MULTIPLIER);
-            const y = centerY + Math.sin(index * 0.7) * (this.height * 0.2);
-
             const planet = new Planet({
                 name: planetData.name,
                 radius: planetData.radius,
                 color: planetData.color,
-                x: x,
-                y: y
+                orbitRadius: planetData.orbitRadius,
+                orbitSpeed: planetData.orbitSpeed,
+                orbitAngle: planetData.orbitAngle
             });
 
+            // Set the Sun's position for each planet's orbit
+            planet.setSunPosition(centerX, centerY);
+
+            // Add orbit path to game container
+            this.gameContainer.addChild(planet.orbitPath);
+
+            // Add planet to array and game container
             this.planets.push(planet);
             this.gameContainer.addChild(planet.sprite);
         });
@@ -189,8 +205,12 @@ class Game {
 
         // Place spaceship in orbit around Earth
         const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
+
+        // Position the spaceship slightly offset from the planet
         this.spaceship.x = startingPlanet.x + startingPlanet.radius * 1.5;
         this.spaceship.y = startingPlanet.y;
+
+        // Enter orbit around the starting planet
         this.spaceship.enterOrbit(startingPlanet, startingPlanet.radius * 1.5);
 
         this.gameContainer.addChild(this.spaceship.sprite);
@@ -221,6 +241,11 @@ class Game {
 
     update(delta) {
         if (this.gameState !== 'playing') return;
+
+        // Update the Sun
+        if (this.sun) {
+            this.sun.update();
+        }
 
         // Update spaceship
         if (this.spaceship) {

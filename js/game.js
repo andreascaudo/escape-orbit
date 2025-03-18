@@ -88,19 +88,52 @@ class Game {
     }
 
     showTitleScreen() {
+        console.log('Showing title screen');
         this.gameState = 'title';
 
         // Show title and instructions
         this.messageText.text = 'ESCAPE ORBIT\n\nColonize planets and escape the solar system\n\nTap/Click to Start';
 
-        // Listen for click/tap to start
-        this.stage.interactive = true;
-        this.stage.once('pointerdown', () => {
+        // Make the message text interactive and visible
+        this.messageText.interactive = true;
+        this.messageText.buttonMode = true;
+
+        // Add a background rectangle to make the clickable area more visible
+        const clickArea = new PIXI.Graphics();
+        clickArea.beginFill(0x000000, 0.01); // Almost transparent
+        clickArea.drawRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        clickArea.endFill();
+        clickArea.x = this.width / 2;
+        clickArea.y = this.height / 2;
+        clickArea.interactive = true;
+        this.uiContainer.addChild(clickArea);
+
+        console.log('Setting up click events');
+
+        // Listen for click/tap on message text
+        this.messageText.on('pointerdown', () => {
+            console.log('Message text clicked');
             this.startGame();
+        });
+
+        // Listen for click/tap on background
+        clickArea.on('pointerdown', () => {
+            console.log('Click area clicked');
+            this.startGame();
+        });
+
+        // Also keep the stage interactive as a fallback
+        this.stage.interactive = true;
+        this.stage.on('pointerdown', () => {
+            console.log('Stage clicked');
+            if (this.gameState === 'title') {
+                this.startGame();
+            }
         });
     }
 
     startGame() {
+        console.log('Starting game');
         this.gameState = 'playing';
         this.score = 0;
         this.messageText.text = '';
@@ -112,12 +145,15 @@ class Game {
 
         // Create planets
         this.createPlanets();
+        console.log('Planets created:', this.planets.length);
 
         // Create spaceship
         this.createSpaceship();
+        console.log('Spaceship created');
 
         // Create initial hazards
         this.createHazards();
+        console.log('Hazards created:', this.hazards.length);
     }
 
     createPlanets() {

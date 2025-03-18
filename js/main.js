@@ -1,5 +1,6 @@
 // Main entry point for Escape Orbit game
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM content loaded');
     // Create sound directory (for sound files referenced in game.js)
     createSoundDirectory();
 
@@ -13,11 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
         antialias: true
     });
 
+    console.log('PixiJS app created');
+
     // Add the canvas to the DOM
     document.getElementById('game-container').appendChild(app.view);
 
     // Create and initialize game
     const game = new Game(app);
+    console.log('Game initialized');
 
     // Handle window resize
     window.addEventListener('resize', () => {

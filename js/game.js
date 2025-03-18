@@ -10,8 +10,8 @@ class Game {
         this.highScore = getHighScore();
 
         // Camera and zoom settings
-        this.zoom = 1;
-        this.minZoom = 0.5;
+        this.zoom = 0.7; // Start with a zoomed out view to see the larger orbits
+        this.minZoom = 0.3; // Allow zooming out further
         this.maxZoom = 2;
 
         // Create game containers
@@ -179,7 +179,7 @@ class Game {
         this.gameState = 'playing';
         this.score = 0;
         this.messageText.text = '';
-        this.zoom = 1;
+        this.zoom = 0.7; // Use the same default zoom as constructor
 
         // Clear any existing game objects
         this.gameContainer.removeChildren();
@@ -200,6 +200,9 @@ class Game {
         // Create initial hazards
         this.createHazards();
         console.log('Hazards created:', this.hazards.length);
+
+        // Apply initial zoom
+        this.applyZoom();
     }
 
     createPlanets() {
@@ -492,7 +495,8 @@ class Game {
     drawBoundary() {
         // Draw a boundary around the solar system to help with orientation
         const outerPlanetDistance = CONSTANTS.PLANETS[CONSTANTS.PLANETS.length - 1].orbitRadius;
-        const boundaryRadius = outerPlanetDistance * 1.2;
+        // Make the boundary slightly larger to accommodate the larger orbits
+        const boundaryRadius = outerPlanetDistance * 1.1;
 
         // Create a boundary circle
         if (!this.boundary) {

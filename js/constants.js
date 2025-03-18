@@ -28,7 +28,7 @@ const CONSTANTS = {
             name: "Mercury",
             radius: 20,
             color: 0xAA8866,
-            orbitRadius: 200,
+            orbitRadius: 300,
             orbitSpeed: 0.01,
             orbitAngle: 0
         },
@@ -36,7 +36,7 @@ const CONSTANTS = {
             name: "Venus",
             radius: 35,
             color: 0xDDAA77,
-            orbitRadius: 300,
+            orbitRadius: 450,
             orbitSpeed: 0.008,
             orbitAngle: 1.2
         },
@@ -44,7 +44,7 @@ const CONSTANTS = {
             name: "Earth",
             radius: 40,
             color: 0x0077ff,
-            orbitRadius: 400,
+            orbitRadius: 600,
             orbitSpeed: 0.005,
             orbitAngle: 2.1
         },
@@ -52,7 +52,7 @@ const CONSTANTS = {
             name: "Mars",
             radius: 30,
             color: 0xff4400,
-            orbitRadius: 500,
+            orbitRadius: 750,
             orbitSpeed: 0.004,
             orbitAngle: 0.7
         },
@@ -60,7 +60,7 @@ const CONSTANTS = {
             name: "Jupiter",
             radius: 70,
             color: 0xffaa22,
-            orbitRadius: 650,
+            orbitRadius: 975,
             orbitSpeed: 0.002,
             orbitAngle: 3.5
         },
@@ -68,7 +68,7 @@ const CONSTANTS = {
             name: "Saturn",
             radius: 60,
             color: 0xffdd44,
-            orbitRadius: 800,
+            orbitRadius: 1200,
             orbitSpeed: 0.0015,
             orbitAngle: 4.2
         },
@@ -76,7 +76,7 @@ const CONSTANTS = {
             name: "Uranus",
             radius: 45,
             color: 0x44aaff,
-            orbitRadius: 900,
+            orbitRadius: 1350,
             orbitSpeed: 0.001,
             orbitAngle: 5.6
         },
@@ -84,7 +84,7 @@ const CONSTANTS = {
             name: "Neptune",
             radius: 45,
             color: 0x4444ff,
-            orbitRadius: 1000,
+            orbitRadius: 1500,
             orbitSpeed: 0.0008,
             orbitAngle: 0.3
         }

@@ -5,15 +5,15 @@ const CONSTANTS = {
     SCREEN_HEIGHT: window.innerHeight,
 
     // Physics settings
-    GRAVITY: 0.05,
-    ORBIT_SPEED: 0.02,
-    BOOST_POWER: 0.2,
+    GRAVITY: 0.08,          // Increased gravity strength
+    ORBIT_SPEED: 0.015,     // Slightly slower orbit for more control
+    BOOST_POWER: 0.15,      // Reduced boost power for more strategic gameplay
 
     // Fuel settings
     MAX_FUEL: 100,
-    ORBIT_FUEL_CONSUMPTION: 0.05,
-    BOOST_FUEL_CONSUMPTION: 0.5,
-    PLANET_REFUEL_AMOUNT: 20,
+    ORBIT_FUEL_CONSUMPTION: 0.03,  // Reduced to allow longer orbiting
+    BOOST_FUEL_CONSUMPTION: 0.4,   // Slightly reduced but still significant
+    PLANET_REFUEL_AMOUNT: 25,      // Increased refuel amount for better progression
 
     // Solar System settings
     SUN: {

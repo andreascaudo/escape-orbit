@@ -13,6 +13,10 @@ class Spaceship {
 
         // Create sprite
         this.sprite = new PIXI.Graphics();
+
+        // Create trajectory prediction line
+        this.trajectoryLine = new PIXI.Graphics();
+
         this.drawSpaceship();
     }
 
@@ -46,6 +50,76 @@ class Spaceship {
         sprite.rotation = this.rotation;
     }
 
+    // Draw a prediction line showing the trajectory when exiting orbit
+    drawTrajectoryPrediction(planets) {
+        if (!this.orbiting || this.fuel <= 0) {
+            // Clear trajectory line if not orbiting or out of fuel
+            this.trajectoryLine.clear();
+            return;
+        }
+
+        // Calculate predicted velocity after exit
+        const orbitSpeed = Math.sqrt(CONSTANTS.GRAVITY * this.orbitRadius);
+        const tangentialDirection = this.orbitAngle + Math.PI / 2;
+        const orbitalVX = Math.cos(tangentialDirection) * orbitSpeed;
+        const orbitalVY = Math.sin(tangentialDirection) * orbitSpeed;
+        const boostPower = CONSTANTS.BOOST_POWER * 2;
+        const boostVX = Math.cos(this.rotation) * boostPower;
+        const boostVY = Math.sin(this.rotation) * boostPower;
+
+        // Predicted velocity components
+        const predVX = orbitalVX + boostVX;
+        const predVY = orbitalVY + boostVY;
+
+        // Draw trajectory prediction line
+        const line = this.trajectoryLine;
+        line.clear();
+        line.lineStyle(1, 0xFFFFFF, 0.5);
+
+        // Start at current position
+        line.moveTo(this.x, this.y);
+
+        // Simulate trajectory for a number of steps
+        let simX = this.x;
+        let simY = this.y;
+        let simVX = predVX;
+        let simVY = predVY;
+
+        // Simulate trajectory for 150 steps
+        for (let i = 0; i < 150; i++) {
+            // Apply gravity from all planets in simulation
+            let totalForceX = 0;
+            let totalForceY = 0;
+
+            planets.forEach(planet => {
+                const dx = planet.x - simX;
+                const dy = planet.y - simY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < planet.gravitationalField) {
+                    const force = CONSTANTS.GRAVITY * (1 - dist / planet.gravitationalField);
+                    const angle = Math.atan2(dy, dx);
+
+                    totalForceX += Math.cos(angle) * force;
+                    totalForceY += Math.sin(angle) * force;
+                }
+            });
+
+            // Update simulated velocity with gravity
+            simVX += totalForceX;
+            simVY += totalForceY;
+
+            // Update simulated position
+            simX += simVX;
+            simY += simVY;
+
+            // Add point to trajectory line
+            if (i % 3 === 0) { // Add every 3rd point to reduce line complexity
+                line.lineTo(simX, simY);
+            }
+        }
+    }
+
     update(planets) {
         // Handle fuel consumption
         if (this.orbiting) {
@@ -72,6 +146,9 @@ class Spaceship {
 
             // Point ship tangent to orbit
             this.rotation = this.orbitAngle + Math.PI / 2;
+
+            // Update trajectory prediction when orbiting
+            this.drawTrajectoryPrediction(planets);
         } else {
             // Free movement physics
             this.x += this.vx;
@@ -87,6 +164,9 @@ class Spaceship {
 
             // Check if we've entered orbit of a planet
             this.checkOrbit(planets);
+
+            // Clear trajectory line when not in orbit
+            this.trajectoryLine.clear();
         }
 
         // Update visual representation
@@ -139,11 +219,33 @@ class Spaceship {
 
     exitOrbit() {
         if (this.orbiting && this.fuel > 0) {
+            // Calculate orbital velocity components
+            // Tangential velocity is perpendicular to the radius
+            const orbitSpeed = Math.sqrt(CONSTANTS.GRAVITY * this.orbitRadius);
+
+            // Calculate tangential direction (perpendicular to radius)
+            const tangentialDirection = this.orbitAngle + Math.PI / 2;
+
+            // Calculate orbital velocity components
+            const orbitalVX = Math.cos(tangentialDirection) * orbitSpeed;
+            const orbitalVY = Math.sin(tangentialDirection) * orbitSpeed;
+
+            // Calculate boost components in the direction ship is facing
+            const boostPower = CONSTANTS.BOOST_POWER * 2;
+            const boostVX = Math.cos(this.rotation) * boostPower;
+            const boostVY = Math.sin(this.rotation) * boostPower;
+
+            // Set velocity as combination of orbital velocity and boost
+            this.vx = orbitalVX + boostVX;
+            this.vy = orbitalVY + boostVY;
+
+            // Apply small fuel cost for the exit boost
+            this.fuel -= CONSTANTS.BOOST_FUEL_CONSUMPTION * 2;
+
+            // Clear orbit reference
             this.orbiting = null;
 
-            // Give initial velocity in direction ship is facing
-            this.vx = Math.cos(this.rotation) * CONSTANTS.BOOST_POWER * 2;
-            this.vy = Math.sin(this.rotation) * CONSTANTS.BOOST_POWER * 2;
+            console.log("Exiting orbit with velocity:", Math.sqrt(this.vx * this.vx + this.vy * this.vy));
         }
     }
 

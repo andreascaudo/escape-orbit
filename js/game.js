@@ -31,6 +31,7 @@ class Game {
         this.scoreText = null;
         this.messageText = null;
         this.zoomText = null;
+        this.orbitHelpText = null;
 
         // Sound effects
         this.sounds = {
@@ -114,6 +115,18 @@ class Game {
         zoomInstructions.x = 20;
         zoomInstructions.y = 110;
         this.uiContainer.addChild(zoomInstructions);
+
+        // Create orbit exit help text
+        this.orbitHelpText = new PIXI.Text('SPACE: Exit Orbit | Trajectory line shows predicted path', {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0xFFCC33
+        });
+        this.orbitHelpText.x = this.width / 2;
+        this.orbitHelpText.y = this.height - 40;
+        this.orbitHelpText.anchor.set(0.5, 0);
+        this.orbitHelpText.visible = false; // Initially hidden
+        this.uiContainer.addChild(this.orbitHelpText);
 
         // Create message text
         this.messageText = new PIXI.Text('', {
@@ -277,6 +290,8 @@ class Game {
         // Enter orbit around the starting planet
         this.spaceship.enterOrbit(startingPlanet, startingPlanet.radius * 1.5);
 
+        // Add spaceship and trajectory line to the game container
+        this.gameContainer.addChild(this.spaceship.trajectoryLine);
         this.gameContainer.addChild(this.spaceship.sprite);
 
         // Initialize camera position to center on the starting planet
@@ -328,6 +343,9 @@ class Game {
 
             // Update fuel display
             this.fuelText.text = `FUEL: ${Math.floor(this.spaceship.fuel)}%`;
+
+            // Show orbit help text when in orbit
+            this.orbitHelpText.visible = !!this.spaceship.orbiting;
 
             // Check for game over conditions
             if (this.spaceship.fuel <= 0 && !this.spaceship.orbiting) {

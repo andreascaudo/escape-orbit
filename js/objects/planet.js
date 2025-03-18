@@ -26,6 +26,15 @@ class Planet {
         // Create orbit path
         this.orbitPath = new PIXI.Graphics();
 
+        // Create label for the planet
+        this.label = new PIXI.Text(this.name, {
+            fontFamily: 'Arial',
+            fontSize: 12,
+            fill: 0xFFFFFF,
+            align: 'center'
+        });
+        this.label.anchor.set(0.5);
+
         try {
             this.drawPlanet();
             this.drawOrbitPath();
@@ -99,6 +108,10 @@ class Planet {
         // Set position
         sprite.x = this.x;
         sprite.y = this.y;
+
+        // Position label
+        this.label.x = this.x;
+        this.label.y = this.y + this.radius + 15;
     }
 
     drawOrbitPath() {
@@ -126,6 +139,10 @@ class Planet {
         // Update sprite position
         this.sprite.x = this.x;
         this.sprite.y = this.y;
+
+        // Update label position
+        this.label.x = this.x;
+        this.label.y = this.y + this.radius + 15;
     }
 
     update() {

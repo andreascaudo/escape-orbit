@@ -9,6 +9,11 @@ class Game {
         this.score = 0;
         this.highScore = getHighScore();
 
+        // Camera and zoom settings
+        this.zoom = 1;
+        this.minZoom = 0.5;
+        this.maxZoom = 2;
+
         // Create game containers
         this.gameContainer = new PIXI.Container();
         this.uiContainer = new PIXI.Container();
@@ -25,6 +30,7 @@ class Game {
         this.fuelText = null;
         this.scoreText = null;
         this.messageText = null;
+        this.zoomText = null;
 
         // Sound effects
         this.sounds = {
@@ -47,6 +53,22 @@ class Game {
 
         // Initialize controls
         this.controls = new Controls(this);
+
+        // Add keyboard event listeners for zoom
+        window.addEventListener('keydown', (e) => {
+            // Zoom in with '+' key or '='
+            if (e.key === '+' || e.key === '=') {
+                this.zoomIn();
+            }
+            // Zoom out with '-' key
+            else if (e.key === '-') {
+                this.zoomOut();
+            }
+            // Reset zoom with '0' key
+            else if (e.key === '0') {
+                this.resetZoom();
+            }
+        });
 
         // Start the game loop
         this.app.ticker.add(this.update, this);
@@ -72,6 +94,26 @@ class Game {
         this.scoreText.x = 20;
         this.scoreText.y = 50;
         this.uiContainer.addChild(this.scoreText);
+
+        // Create zoom display
+        this.zoomText = new PIXI.Text('ZOOM: 100%', {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0xFFFFFF
+        });
+        this.zoomText.x = 20;
+        this.zoomText.y = 80;
+        this.uiContainer.addChild(this.zoomText);
+
+        // Create zoom instruction
+        const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
+            fontFamily: 'Arial',
+            fontSize: 14,
+            fill: 0xAAAAAA
+        });
+        zoomInstructions.x = 20;
+        zoomInstructions.y = 110;
+        this.uiContainer.addChild(zoomInstructions);
 
         // Create message text
         this.messageText = new PIXI.Text('', {
@@ -137,6 +179,7 @@ class Game {
         this.gameState = 'playing';
         this.score = 0;
         this.messageText.text = '';
+        this.zoom = 1;
 
         // Clear any existing game objects
         this.gameContainer.removeChildren();
@@ -146,6 +189,9 @@ class Game {
         // Create planets
         this.createPlanets();
         console.log('Planets created:', this.planets.length);
+
+        // Draw system boundary
+        this.drawBoundary();
 
         // Create spaceship
         this.createSpaceship();
@@ -173,6 +219,18 @@ class Game {
         // Add the Sun to the stage
         this.gameContainer.addChild(this.sun.sprite);
 
+        // Create Sun label
+        const sunLabel = new PIXI.Text('Sun', {
+            fontFamily: 'Arial',
+            fontSize: 14,
+            fill: 0xFFFFFF,
+            align: 'center'
+        });
+        sunLabel.anchor.set(0.5);
+        sunLabel.x = centerX;
+        sunLabel.y = centerY + this.sun.radius + 20;
+        this.gameContainer.addChild(sunLabel);
+
         // Create planets based on constants
         CONSTANTS.PLANETS.forEach((planetData, index) => {
             const planet = new Planet({
@@ -193,6 +251,9 @@ class Game {
             // Add planet to array and game container
             this.planets.push(planet);
             this.gameContainer.addChild(planet.sprite);
+
+            // Add planet label to game container
+            this.gameContainer.addChild(planet.label);
         });
 
         // Colonize the starting planet (Earth)
@@ -214,6 +275,14 @@ class Game {
         this.spaceship.enterOrbit(startingPlanet, startingPlanet.radius * 1.5);
 
         this.gameContainer.addChild(this.spaceship.sprite);
+
+        // Initialize camera position to center on the starting planet
+        this.gameContainer.x = this.width / 2 - startingPlanet.x;
+        this.gameContainer.y = this.height / 2 - startingPlanet.y;
+
+        // Store initial camera position
+        this.initialCameraX = this.gameContainer.x;
+        this.initialCameraY = this.gameContainer.y;
     }
 
     createHazards() {
@@ -251,7 +320,7 @@ class Game {
         if (this.spaceship) {
             this.spaceship.update(this.planets);
 
-            // Update camera to follow spaceship
+            // Update camera
             this.updateCamera();
 
             // Update fuel display
@@ -289,23 +358,39 @@ class Game {
     }
 
     updateCamera() {
-        // Center camera on spaceship with some deadzone
-        const cameraDeadZoneX = this.width * 0.3;
-        const cameraDeadZoneY = this.height * 0.3;
+        // Only follow spaceship if it's not in orbit around starting planet
+        if (!this.spaceship.orbiting || this.spaceship.orbiting !== this.planets[CONSTANTS.STARTING_PLANET]) {
+            // Center camera on spaceship with some deadzone
+            const cameraDeadZoneX = this.width * 0.3;
+            const cameraDeadZoneY = this.height * 0.3;
 
-        // How far ship is from center of screen
-        const distX = this.spaceship.x - (this.width / 2);
-        const distY = this.spaceship.y - (this.height / 2);
+            // How far ship is from center of screen, accounting for zoom
+            const adjustedX = this.spaceship.x * this.zoom;
+            const adjustedY = this.spaceship.y * this.zoom;
+            const centerX = this.width / 2;
+            const centerY = this.height / 2;
 
-        // Only move camera if ship is outside deadzone
-        if (Math.abs(distX) > cameraDeadZoneX) {
-            const moveX = distX - Math.sign(distX) * cameraDeadZoneX;
-            this.gameContainer.x -= moveX;
-        }
+            const distX = adjustedX - (centerX - this.gameContainer.x);
+            const distY = adjustedY - (centerY - this.gameContainer.y);
 
-        if (Math.abs(distY) > cameraDeadZoneY) {
-            const moveY = distY - Math.sign(distY) * cameraDeadZoneY;
-            this.gameContainer.y -= moveY;
+            // Only move camera if ship is outside deadzone
+            if (Math.abs(distX) > cameraDeadZoneX) {
+                const moveX = distX - Math.sign(distX) * cameraDeadZoneX;
+                this.gameContainer.x -= moveX;
+            }
+
+            if (Math.abs(distY) > cameraDeadZoneY) {
+                const moveY = distY - Math.sign(distY) * cameraDeadZoneY;
+                this.gameContainer.y -= moveY;
+            }
+        } else {
+            // Smoothly return to initial position when in orbit around starting planet
+            const returnSpeed = 0.05;
+            const targetX = this.width / 2 - this.planets[CONSTANTS.STARTING_PLANET].x * this.zoom;
+            const targetY = this.height / 2 - this.planets[CONSTANTS.STARTING_PLANET].y * this.zoom;
+
+            this.gameContainer.x += (targetX - this.gameContainer.x) * returnSpeed;
+            this.gameContainer.y += (targetY - this.gameContainer.y) * returnSpeed;
         }
     }
 
@@ -401,6 +486,49 @@ class Game {
         if (this.spaceship && this.spaceship.orbiting && this.gameState === 'playing') {
             this.spaceship.exitOrbit();
             this.sounds.orbit.play();
+        }
+    }
+
+    drawBoundary() {
+        // Draw a boundary around the solar system to help with orientation
+        const outerPlanetDistance = CONSTANTS.PLANETS[CONSTANTS.PLANETS.length - 1].orbitRadius;
+        const boundaryRadius = outerPlanetDistance * 1.2;
+
+        // Create a boundary circle
+        if (!this.boundary) {
+            this.boundary = new PIXI.Graphics();
+            this.gameContainer.addChild(this.boundary);
+        }
+
+        this.boundary.clear();
+        this.boundary.lineStyle(2, 0x444466, 0.3);
+        this.boundary.drawCircle(this.width / 2, this.height / 2, boundaryRadius);
+    }
+
+    zoomIn() {
+        this.zoom = Math.min(this.maxZoom, this.zoom + 0.1);
+        this.applyZoom();
+    }
+
+    zoomOut() {
+        this.zoom = Math.max(this.minZoom, this.zoom - 0.1);
+        this.applyZoom();
+    }
+
+    resetZoom() {
+        this.zoom = 1;
+        this.applyZoom();
+    }
+
+    applyZoom() {
+        this.gameContainer.scale.set(this.zoom);
+        this.zoomText.text = `ZOOM: ${Math.round(this.zoom * 100)}%`;
+
+        // Re-center view after zoom
+        const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
+        if (startingPlanet) {
+            this.gameContainer.x = this.width / 2 - startingPlanet.x * this.zoom;
+            this.gameContainer.y = this.height / 2 - startingPlanet.y * this.zoom;
         }
     }
 } 

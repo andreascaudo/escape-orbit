@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PixiJS Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #test-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="test-container"></div>
+
+    <!-- PixiJS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.2.4/dist/pixi.min.js"></script>
+
+    <script>
+        // Wait for the DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create PixiJS application
+            const app = new PIXI.Application({
+                width: window.innerWidth,
+                height: window.innerHeight,
+                backgroundColor: 0x000033,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true,
+                antialias: true
+            });
+
+            // Add the canvas to the DOM
+            document.getElementById('test-container').appendChild(app.view);
+
+            // Create a test circle (Earth)
+            const earth = new PIXI.Graphics();
+            earth.beginFill(0x0077ff);
+            earth.drawCircle(0, 0, 50);
+            earth.endFill();
+
+            // Add atmosphere
+            earth.beginFill(0x0077ff, 0.2);
+            earth.drawCircle(0, 0, 60);
+            earth.endFill();
+
+            // Position Earth in the center of the screen
+            earth.x = app.screen.width / 2;
+            earth.y = app.screen.height / 2;
+
+            // Add Earth to the stage
+            app.stage.addChild(earth);
+
+            // Create a spaceship
+            const spaceship = new PIXI.Graphics();
+            spaceship.beginFill(0xFFFFFF);
+            spaceship.moveTo(10, 0);
+            spaceship.lineTo(-5, -5);
+            spaceship.lineTo(-3, 0);
+            spaceship.lineTo(-5, 5);
+            spaceship.lineTo(10, 0);
+            spaceship.endFill();
+
+            // Position spaceship in orbit around Earth
+            spaceship.x = earth.x + 100;
+            spaceship.y = earth.y;
+
+            // Add spaceship to the stage
+            app.stage.addChild(spaceship);
+
+            // Animation loop
+            let angle = 0;
+            app.ticker.add(() => {
+                // Rotate spaceship around Earth
+                angle += 0.02;
+                spaceship.x = earth.x + Math.cos(angle) * 100;
+                spaceship.y = earth.y + Math.sin(angle) * 100;
+
+                // Make spaceship point in the direction of movement
+                spaceship.rotation = angle + Math.PI / 2;
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                // Update app size
+                app.renderer.resize(window.innerWidth, window.innerHeight);
+
+                // Reposition Earth
+                earth.x = app.screen.width / 2;
+                earth.y = app.screen.height / 2;
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -251,10 +251,15 @@ class Game {
     checkForColonization() {
         // Count colonized planets
         let colonizedCount = 0;
+        let totalPlanetsToColonize = 0;
 
-        this.planets.forEach(planet => {
-            if (planet.colonized) {
-                colonizedCount++;
+        this.planets.forEach((planet, index) => {
+            // Skip the starting planet in the win condition count
+            if (index !== CONSTANTS.STARTING_PLANET) {
+                totalPlanetsToColonize++;
+                if (planet.colonized) {
+                    colonizedCount++;
+                }
             }
         });
 
@@ -262,8 +267,8 @@ class Game {
         this.score = colonizedCount * 100;
         this.scoreText.text = `SCORE: ${this.score}`;
 
-        // Win condition - all planets colonized
-        if (colonizedCount === this.planets.length) {
+        // Win condition - all planets except starting planet colonized
+        if (colonizedCount === totalPlanetsToColonize && totalPlanetsToColonize > 0) {
             this.gameOver('Victory! You colonized all planets!', true);
         }
     }

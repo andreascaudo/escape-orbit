@@ -17,14 +17,24 @@ class Planet {
         this.sunY = 0; // Will be set when positioning in the solar system
 
         this.atmosphere = config.radius * 1.2; // Atmosphere radius
-        this.gravitationalField = config.radius * 5; // Gravity field radius
+        this.gravitationalField = config.radius * 6; // Reduced from 8 to 6 for smaller field
+        this.orbitRange = config.radius * 3; // Range where player can enter orbit
         this.colonized = false;
+        this.inOrbitRange = false; // If player is within orbit range
+        this.visited = false;
+
+        // Score tracking
+        this.visitScoreAdded = false;
+        this.colonizeScoreAdded = false;
 
         // Create graphics container for the planet
         this.sprite = new PIXI.Graphics();
 
         // Create orbit path
         this.orbitPath = new PIXI.Graphics();
+
+        // Create orbit indicator
+        this.orbitIndicator = new PIXI.Graphics();
 
         // Create label for the planet
         this.label = new PIXI.Text(this.name, {
@@ -56,10 +66,18 @@ class Planet {
         const sprite = this.sprite;
         sprite.clear();
 
-        // Draw gravitational field (very faint)
-        sprite.beginFill(this.color, 0.05);
-        sprite.drawCircle(0, 0, this.gravitationalField);
-        sprite.endFill();
+        // Draw gravitational field with a more gradual fade and reduced opacity
+        const gradientSteps = 6;
+        for (let i = 0; i < gradientSteps; i++) {
+            const ratio = i / gradientSteps;
+            const fieldRadius = this.gravitationalField * (1 - ratio * 0.3);
+            // Further reduced alpha values for gravitational field
+            const fieldAlpha = 0.07 * (1 - ratio * 0.9); // Reduced from 0.1 to 0.07
+
+            sprite.beginFill(this.color, fieldAlpha);
+            sprite.drawCircle(0, 0, fieldRadius);
+            sprite.endFill();
+        }
 
         // Draw atmosphere
         sprite.beginFill(this.color, 0.2);
@@ -70,6 +88,44 @@ class Planet {
         sprite.beginFill(this.color);
         sprite.drawCircle(0, 0, this.radius);
         sprite.endFill();
+
+        // Add visited indicator if visited but not colonized
+        if (this.visited && !this.colonized) {
+            // Draw a smaller star for visited planets
+            try {
+                sprite.beginFill(0xFFFFFF, 0.9);
+
+                // Create points for a star shape (smaller than colonization star)
+                const points = [];
+                const outerRadius = this.radius * 0.15;
+                const innerRadius = this.radius * 0.07;
+                const numPoints = 5;
+                const startAngle = -Math.PI / 2;
+
+                for (let i = 0; i < numPoints * 2; i++) {
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const angle = startAngle + (i * Math.PI) / numPoints;
+                    points.push(
+                        radius * Math.cos(angle),
+                        radius * Math.sin(angle)
+                    );
+                }
+
+                sprite.drawPolygon(points);
+                sprite.endFill();
+
+                // Also draw an outline around the planet
+                sprite.lineStyle(2, 0xFFFFFF, 0.5);
+                sprite.drawCircle(0, 0, this.radius + 3);
+                sprite.lineStyle(0);
+            } catch (error) {
+                console.error('Error drawing visited star:', error);
+                // Fallback
+                sprite.lineStyle(2, 0xFFFFFF, 0.7);
+                sprite.drawCircle(0, 0, this.radius + 3);
+                sprite.lineStyle(0);
+            }
+        }
 
         // Add colonization marker if colonized
         if (this.colonized) {
@@ -109,6 +165,13 @@ class Planet {
         sprite.x = this.x;
         sprite.y = this.y;
 
+        // Update label style based on visit status
+        if (this.visited) {
+            this.label.style.fill = this.colonized ? 0xFFDD33 : 0xAAFFFF;
+        } else {
+            this.label.style.fill = 0xFFFFFF;
+        }
+
         // Position label
         this.label.x = this.x;
         this.label.y = this.y + this.radius + 15;
@@ -129,6 +192,61 @@ class Planet {
         path.y = this.sunY;
     }
 
+    // Draw the orbit range indicator when player is in range
+    updateOrbitIndicator(inRange, playerX, playerY) {
+        this.inOrbitRange = inRange;
+        this.orbitIndicator.clear();
+
+        if (inRange) {
+            // Calculate actual distance from player to planet
+            const actualDistance = playerX && playerY ?
+                distance(this.x, this.y, playerX, playerY) :
+                this.radius * 4; // Fallback if player position not provided
+
+            // Draw orbit indicator using planet's color
+            this.orbitIndicator.lineStyle(3, this.color, 0.8);
+
+            // Draw dashed circle around the planet to indicate orbit range
+            const dashLength = 12; // Slightly longer dashes
+            const gapLength = 6;  // Slightly longer gaps
+
+            // Use actual player distance instead of fixed radius
+            const radius = actualDistance;
+
+            const circumference = 2 * Math.PI * radius;
+            const steps = Math.floor(circumference / (dashLength + gapLength));
+
+            for (let i = 0; i < steps; i++) {
+                const startAngle = (i * (dashLength + gapLength)) / circumference * 2 * Math.PI;
+                const endAngle = startAngle + (dashLength / circumference) * 2 * Math.PI;
+
+                this.orbitIndicator.arc(0, 0, radius, startAngle, endAngle);
+            }
+
+            // Add a small "SPACE to orbit" label with planet's color
+            const orbitText = new PIXI.Text("SPACE", {
+                fontFamily: 'Arial',
+                fontSize: 12, // Slightly larger font
+                fill: this.color,
+                align: 'center'
+            });
+            orbitText.anchor.set(0.5);
+            orbitText.x = 0;
+            orbitText.y = -radius - 15; // Position adjusted for orbit
+
+            // Clear any previous text
+            while (this.orbitIndicator.children.length > 0) {
+                this.orbitIndicator.removeChildAt(0);
+            }
+
+            this.orbitIndicator.addChild(orbitText);
+        }
+
+        // Position the orbit indicator at the planet
+        this.orbitIndicator.x = this.x;
+        this.orbitIndicator.y = this.y;
+    }
+
     updatePosition() {
         if (this.orbitRadius <= 0 || !this.sunX || !this.sunY) return;
 
@@ -143,6 +261,12 @@ class Planet {
         // Update label position
         this.label.x = this.x;
         this.label.y = this.y + this.radius + 15;
+
+        // Update orbit indicator position if it exists
+        if (this.orbitIndicator) {
+            this.orbitIndicator.x = this.x;
+            this.orbitIndicator.y = this.y;
+        }
     }
 
     update() {
@@ -159,9 +283,23 @@ class Planet {
         }
     }
 
+    getIdealOrbitRadius() {
+        // Return an ideal orbit radius scaled to planet size
+        // Make orbits larger for larger planets
+        return this.radius * 6; // Increased from 4x to 6x
+    }
+
+    visit() {
+        if (!this.visited) {
+            console.log(`Visited planet: ${this.name}`);
+            this.visited = true;
+        }
+    }
+
     colonize() {
         console.log(`Colonizing planet: ${this.name}`);
         this.colonized = true;
+        this.visited = true; // Also mark as visited
         this.needsUpdate = true;
     }
 } 

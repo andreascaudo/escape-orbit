@@ -57,13 +57,18 @@ class Controls {
             this.game.stopBoosting();
         });
 
-        // Handle double tap for orbit exit
+        // Handle double tap for orbit entry/exit
         let lastTap = 0;
         document.addEventListener('touchend', (e) => {
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTap;
             if (tapLength < 300 && tapLength > 0) {
-                this.game.exitOrbit();
+                // Double tap to toggle orbit state
+                if (this.game.spaceship.orbiting) {
+                    this.game.exitOrbit();
+                } else {
+                    this.game.tryEnterOrbit();
+                }
             }
             lastTap = currentTime;
         });
@@ -96,7 +101,12 @@ class Controls {
                     break;
                 case 'Space':
                     keys.space = true;
-                    this.game.exitOrbit();
+                    // Toggle orbit state
+                    if (this.game.spaceship.orbiting) {
+                        this.game.exitOrbit();
+                    } else {
+                        this.game.tryEnterOrbit();
+                    }
                     break;
             }
         });

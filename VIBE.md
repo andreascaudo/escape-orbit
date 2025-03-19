@@ -36,5 +36,80 @@ Initialize a Git repository with the basic structure and files needed to start d
 - Initialize the repo as if it's ready for GitHub Pages deployment (e.g., all files in the root).
 ```
 
+## Gameplay Enhancement Tasks
+
+### Trajectory Line Implementation
+
+```
+Update the Game class to add the trajectory line of the spaceship to the game container
+```
+
+### Orbit Exit Help Text
+
+```
+Add a helpful UI element to show instructions for exiting orbit
+```
+
+### Visual Improvements and Physics Tuning
+
+```
+Reduce the opacity of the faded region and make the planet orbit over the sun larger, the fade region should not overlap. Do not modify the orbit of the spaceshift around the planet
+```
+
+```
+Reduce the orbit of the spacehift around the planet
+```
+
+```
+- Increas the radius of the planet orbit over the sun
+- reduce the opacity of the faded area
+```
+
+```
+Can you match the spaceshift orbit radius around the planet with the radius the spaceshift is when I enter the orbit (when I press space)
+```
+
+```
+Increase the push when leaving orbit
+```
+
+```
+- Increase the speed bust when living the orbit planet by x2
+```
+
+```
+Make the bust of speed when leaving a planet proportional to the size of the planet
+```
+
+```
+Can you increase this bump in speed especially for small and medium size planet?
+```
+
+```
+Increase the boot multiplier by a factor of 2
+```
+
+```
+Set the default spaceship orbit on the planet larger then it is know, also set a limit there is higher then now
+```
+
 ## Future Development Tasks
-*Additional prompts will be added here as development continues.* 
+
+```
+We are done for today:
+- Write a file that summarize what we have done and the next step, put enough information for the next LLM agest to pick up from there
+- Update VIBE.md
+- Update README.md
+```
+
+## Session - Further Improvements
+
+```
+Update all the READMEs, and for the next step to implement add:
+- removing the space text
+- add game info and rules at the begenning 
+- black hole spawn randomly but not on planets orbit
+- Improve the communication about the goal of the game, like number of planets to visit left and think on how this can also evolve in multiple levels
+
+at the end commit to github
+``` 

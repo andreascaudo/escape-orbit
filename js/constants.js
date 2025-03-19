@@ -5,15 +5,15 @@ const CONSTANTS = {
     SCREEN_HEIGHT: window.innerHeight,
 
     // Physics settings
-    GRAVITY: 0.08,          // Increased gravity strength
-    ORBIT_SPEED: 0.015,     // Slightly slower orbit for more control
-    BOOST_POWER: 0.15,      // Reduced boost power for more strategic gameplay
+    GRAVITY: 0.05,          // Moderate base gravity - will be multiplied by planet size factor
+    ORBIT_SPEED: 0.012,     // Kept the same
+    BOOST_POWER: 0.18,      // Kept the same
 
     // Fuel settings
     MAX_FUEL: 100,
-    ORBIT_FUEL_CONSUMPTION: 0.03,  // Reduced to allow longer orbiting
-    BOOST_FUEL_CONSUMPTION: 0.4,   // Slightly reduced but still significant
-    PLANET_REFUEL_AMOUNT: 25,      // Increased refuel amount for better progression
+    ORBIT_FUEL_CONSUMPTION: 0.03,  // Kept the same
+    BOOST_FUEL_CONSUMPTION: 0.4,   // Kept the same
+    PLANET_REFUEL_AMOUNT: 30,      // Increased refuel amount to compensate for higher boost fuel usage
 
     // Solar System settings
     SUN: {
@@ -28,15 +28,15 @@ const CONSTANTS = {
             name: "Mercury",
             radius: 20,
             color: 0xAA8866,
-            orbitRadius: 300,
-            orbitSpeed: 0.01,
+            orbitRadius: 450,
+            orbitSpeed: 0.005,
             orbitAngle: 0
         },
         {
             name: "Venus",
             radius: 35,
             color: 0xDDAA77,
-            orbitRadius: 450,
+            orbitRadius: 675,
             orbitSpeed: 0.008,
             orbitAngle: 1.2
         },
@@ -44,7 +44,7 @@ const CONSTANTS = {
             name: "Earth",
             radius: 40,
             color: 0x0077ff,
-            orbitRadius: 600,
+            orbitRadius: 900,
             orbitSpeed: 0.005,
             orbitAngle: 2.1
         },
@@ -52,7 +52,7 @@ const CONSTANTS = {
             name: "Mars",
             radius: 30,
             color: 0xff4400,
-            orbitRadius: 750,
+            orbitRadius: 1125,
             orbitSpeed: 0.004,
             orbitAngle: 0.7
         },
@@ -60,7 +60,7 @@ const CONSTANTS = {
             name: "Jupiter",
             radius: 70,
             color: 0xffaa22,
-            orbitRadius: 975,
+            orbitRadius: 1400,
             orbitSpeed: 0.002,
             orbitAngle: 3.5
         },
@@ -68,7 +68,7 @@ const CONSTANTS = {
             name: "Saturn",
             radius: 60,
             color: 0xffdd44,
-            orbitRadius: 1200,
+            orbitRadius: 1700,
             orbitSpeed: 0.0015,
             orbitAngle: 4.2
         },
@@ -76,7 +76,7 @@ const CONSTANTS = {
             name: "Uranus",
             radius: 45,
             color: 0x44aaff,
-            orbitRadius: 1350,
+            orbitRadius: 1925,
             orbitSpeed: 0.001,
             orbitAngle: 5.6
         },
@@ -84,7 +84,7 @@ const CONSTANTS = {
             name: "Neptune",
             radius: 45,
             color: 0x4444ff,
-            orbitRadius: 1500,
+            orbitRadius: 2150,
             orbitSpeed: 0.0008,
             orbitAngle: 0.3
         }

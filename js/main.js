@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const game = new Game(app);
     console.log('Game initialized');
 
+    // Make game instance globally accessible for scoring and other interactions
+    window.game = game;
+
     // Handle window resize
     window.addEventListener('resize', () => {
         // Update app size
@@ -33,9 +36,29 @@ document.addEventListener('DOMContentLoaded', () => {
         CONSTANTS.SCREEN_HEIGHT = window.innerHeight;
 
         // Update UI positions
+        if (game.fuelText) {
+            game.fuelText.x = 20;
+            game.fuelText.y = 20;
+        }
+
+        if (game.scoreText) {
+            game.scoreText.x = 20;
+            game.scoreText.y = 50;
+        }
+
+        if (game.zoomText) {
+            game.zoomText.x = 20;
+            game.zoomText.y = 80;
+        }
+
         if (game.messageText) {
             game.messageText.x = window.innerWidth / 2;
             game.messageText.y = window.innerHeight / 2;
+        }
+
+        if (game.orbitHelpText) {
+            game.orbitHelpText.x = window.innerWidth / 2;
+            game.orbitHelpText.y = window.innerHeight - 40;
         }
     });
 });

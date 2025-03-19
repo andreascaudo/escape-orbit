@@ -8,6 +8,9 @@ class Hazard {
         this.radius = 0;
         this.rotation = 0;
         this.rotationSpeed = 0;
+        this.active = true; // Flag to track if the hazard is active
+        this.disintegrating = false; // Flag to track if meteor is disintegrating
+        this.disintegrateProgress = 0; // Progress of disintegration animation
 
         // Create sprite
         this.sprite = new PIXI.Graphics();
@@ -31,21 +34,40 @@ class Hazard {
         sprite.clear();
 
         if (this.type === 'meteor') {
-            // Draw meteor
-            sprite.beginFill(0xAA8866);
+            if (this.disintegrating) {
+                // Draw disintegrating meteor
+                const fadeAlpha = 1 - (this.disintegrateProgress / 20);
+                const particleCount = 5 + Math.floor(this.disintegrateProgress / 2);
 
-            // Create irregular shape
-            const numPoints = 7;
-            const angleStep = (Math.PI * 2) / numPoints;
-            sprite.moveTo(this.radius, 0);
+                // Draw particles spreading outward
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (Math.PI * 2 / particleCount) * i;
+                    const distance = this.disintegrateProgress * 1.5;
+                    const particleX = Math.cos(angle) * distance;
+                    const particleY = Math.sin(angle) * distance;
+                    const particleSize = Math.max(1, this.radius * (1 - this.disintegrateProgress / 20));
 
-            for (let i = 1; i <= numPoints; i++) {
-                const angle = i * angleStep;
-                const radius = this.radius * (0.8 + Math.random() * 0.4);
-                sprite.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                    sprite.beginFill(0xAA8866, fadeAlpha);
+                    sprite.drawCircle(particleX, particleY, particleSize / 2);
+                    sprite.endFill();
+                }
+            } else {
+                // Draw regular meteor
+                sprite.beginFill(0xAA8866);
+
+                // Create irregular shape
+                const numPoints = 7;
+                const angleStep = (Math.PI * 2) / numPoints;
+                sprite.moveTo(this.radius, 0);
+
+                for (let i = 1; i <= numPoints; i++) {
+                    const angle = i * angleStep;
+                    const radius = this.radius * (0.8 + Math.random() * 0.4);
+                    sprite.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                }
+
+                sprite.endFill();
             }
-
-            sprite.endFill();
         } else if (this.type === 'blackhole') {
             // Draw gravitational field
             sprite.beginFill(0x000022, 0.1);
@@ -75,7 +97,20 @@ class Hazard {
     }
 
     update() {
+        if (!this.active) return;
+
         if (this.type === 'meteor') {
+            if (this.disintegrating) {
+                // Update disintegration animation
+                this.disintegrateProgress++;
+                if (this.disintegrateProgress > 20) {
+                    this.active = false;
+                    this.sprite.visible = false;
+                }
+                this.draw();
+                return;
+            }
+
             // Move meteor
             this.x += this.vx;
             this.y += this.vy;
@@ -99,8 +134,43 @@ class Hazard {
         this.sprite.rotation = this.rotation;
     }
 
+    // Check if meteor is near a planet or if a spaceship in orbit would be hit
+    checkPlanetInteraction(planets, spaceship) {
+        if (!this.active || this.type !== 'meteor') return;
+
+        // Check if near any planet's atmosphere or spaceship orbit
+        planets.forEach(planet => {
+            const dist = distance(this.x, this.y, planet.x, planet.y);
+
+            // If meteor gets close to planet atmosphere, disintegrate it
+            if (dist < planet.atmosphere * 1.5) {
+                this.startDisintegration();
+                return;
+            }
+
+            // If meteor might hit an orbiting spaceship, disintegrate it
+            if (spaceship && spaceship.orbiting === planet) {
+                const meteorToShipDist = distance(this.x, this.y, spaceship.x, spaceship.y);
+                if (meteorToShipDist < spaceship.orbitRadius * 1.2) {
+                    // Meteor is approaching orbit path, disintegrate it
+                    this.startDisintegration();
+                    return;
+                }
+            }
+        });
+    }
+
+    startDisintegration() {
+        if (this.disintegrating) return;
+        this.disintegrating = true;
+        this.disintegrateProgress = 0;
+        // Stop movement
+        this.vx = 0;
+        this.vy = 0;
+    }
+
     applyEffect(spaceship) {
-        if (!spaceship) return;
+        if (!spaceship || !this.active || this.disintegrating) return;
 
         // Calculate distance to spaceship
         const dist = distance(this.x, this.y, spaceship.x, spaceship.y);

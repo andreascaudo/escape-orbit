@@ -22,55 +22,24 @@ class Controls {
     }
 
     setupTouchControls() {
-        // Setup virtual joystick using nipplejs
-        const joystickOptions = {
-            zone: document.getElementById('joystick-zone'),
-            mode: 'static',
-            position: { left: '50%', top: '50%' },
-            color: 'white',
-            size: 100
-        };
-
-        this.joystick = nipplejs.create(joystickOptions);
-
-        // Handle joystick events
-        this.joystick.on('move', (event, data) => {
-            if (data.angle) {
-                // Convert angle to radians and adjust for nipplejs coordinate system
-                const angle = (data.angle.radian + Math.PI / 2) % (Math.PI * 2);
-                this.game.setShipRotation(angle);
-            }
-        });
-
-        // Setup boost button
-        const boostButton = document.getElementById('boost-button');
-
-        boostButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.boostButtonActive = true;
-            this.game.startBoosting();
-        });
-
-        boostButton.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            this.boostButtonActive = false;
-            this.game.stopBoosting();
-        });
+        // No joystick or boost button on mobile anymore, just use simple touch controls
+        console.log('Setting up simplified touch controls for mobile');
 
         // Variables for touch long press
         let touchStartTime = 0;
         let touchLongPressActive = false;
         const longPressThreshold = 300; // milliseconds to consider a long press
+        let touchStartX = 0;
+        let touchStartY = 0;
 
-        // Handle touch on the screen (excluding joystick and boost button)
+        // Handle touch on the screen (for all touches now)
         document.addEventListener('touchstart', (e) => {
             // Only activate for gameplay screen
             if (this.game.gameState !== 'playing') return;
 
-            // Skip if the touch is on the joystick or boost button
-            const target = e.target;
-            if (target.id === 'joystick-zone' || target.id === 'boost-button') return;
-
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
             touchStartTime = Date.now();
             touchLongPressActive = false;
 
@@ -86,10 +55,6 @@ class Controls {
         document.addEventListener('touchend', (e) => {
             // Only activate for gameplay screen
             if (this.game.gameState !== 'playing') return;
-
-            // Skip if the touch is on the joystick or boost button
-            const target = e.target;
-            if (target.id === 'joystick-zone' || target.id === 'boost-button') return;
 
             // Clear the long press timer
             clearTimeout(this.touchTimer);
@@ -112,16 +77,36 @@ class Controls {
             }
         });
 
-        // Cancel boost on touch move (if moved too far)
+        // For ship rotation on touch move
         document.addEventListener('touchmove', (e) => {
-            // Clear the long press timer if touch moves significantly
-            clearTimeout(this.touchTimer);
+            // Only activate for gameplay screen
+            if (this.game.gameState !== 'playing') return;
 
-            // Stop boosting if it was active
-            if (touchLongPressActive) {
-                this.game.stopBoosting();
-                touchLongPressActive = false;
+            // Don't rotate if in orbit or if long press is active
+            if (this.game.spaceship.orbiting || touchLongPressActive) {
+                // Clear the long press timer if touch moves significantly
+                clearTimeout(this.touchTimer);
+
+                // Stop boosting if it was active
+                if (touchLongPressActive) {
+                    this.game.stopBoosting();
+                    touchLongPressActive = false;
+                }
+                return;
             }
+
+            // Get current touch position
+            const touch = e.touches[0];
+            const currentX = touch.clientX;
+            const currentY = touch.clientY;
+
+            // Calculate angle from center of the screen to touch point for rotation
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const angle = Math.atan2(currentY - centerY, currentX - centerX);
+
+            // Set ship rotation
+            this.game.setShipRotation(angle + Math.PI / 2); // Adjust by 90 degrees
         });
     }
 
@@ -279,11 +264,12 @@ class Controls {
     }
 
     destroy() {
-        if (this.joystick) {
-            this.joystick.destroy();
-        }
+        // Clean up any intervals/timers
         if (this.keysInterval) {
             clearInterval(this.keysInterval);
         }
+
+        // Clear any remaining touch timers
+        clearTimeout(this.touchTimer);
     }
 } 

@@ -12,8 +12,15 @@ class Game {
         // Detect if on mobile device
         this.isMobile = this.detectMobile();
 
-        // Camera and zoom settings
-        this.zoom = this.isMobile ? 0.3 : 0.6; // Use 30% zoom on mobile, 60% on desktop
+        // Camera and zoom settings - adjust based on device and orientation
+        if (this.isMobile) {
+            // Check if we're in landscape (width > height)
+            const isLandscape = window.innerWidth > window.innerHeight;
+            // For landscape orientation on mobile, use a slightly larger zoom 
+            this.zoom = isLandscape ? 0.4 : 0.3; // 40% zoom on mobile landscape, 30% on portrait
+        } else {
+            this.zoom = 0.6; // 60% on desktop
+        }
         this.minZoom = 0.3; // Allow zooming out further
         this.maxZoom = 2;
 
@@ -118,8 +125,8 @@ class Game {
         this.zoomText.y = 80;
         this.uiContainer.addChild(this.zoomText);
 
-        // Create planet counter
-        this.planetCountText = new PIXI.Text('🪐 1/8 Planets', {
+        // Create planet counter with more space
+        this.planetCountText = new PIXI.Text('Visited 🪂: 0/8\nColonized 🏴‍☠️: 0/8', {
             fontFamily: 'Arial',
             fontSize: 16,
             fill: 0xFFFFFF
@@ -128,15 +135,17 @@ class Game {
         this.planetCountText.y = 110;
         this.uiContainer.addChild(this.planetCountText);
 
-        // Create zoom instruction
-        const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
-            fontFamily: 'Arial',
-            fontSize: 14,
-            fill: 0xAAAAAA
-        });
-        zoomInstructions.x = 20;
-        zoomInstructions.y = 140;
-        this.uiContainer.addChild(zoomInstructions);
+        // Create zoom instruction - only on desktop
+        if (!this.isMobile) {
+            const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
+                fontFamily: 'Arial',
+                fontSize: 14,
+                fill: 0xAAAAAA
+            });
+            zoomInstructions.x = 20;
+            zoomInstructions.y = 165;
+            this.uiContainer.addChild(zoomInstructions);
+        }
 
         // Create orbit help text
         this.orbitHelpText = new PIXI.Text('SPACE: Exit Orbit | Trajectory line shows predicted path', {
@@ -165,10 +174,14 @@ class Game {
         // Create message text
         this.messageText = new PIXI.Text('', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
-            align: 'center'
+            align: 'center',
+            lineHeight: 28,
+            dropShadow: true,
+            dropShadowColor: 0x000000,
+            dropShadowDistance: 2
         });
         this.messageText.anchor.set(0.5);
         this.messageText.x = this.width / 2;
@@ -180,12 +193,30 @@ class Game {
         console.log('Showing title screen');
         this.gameState = 'title';
 
+        // Create a background for the instructions
+        const instructionsBg = new PIXI.Graphics();
+        instructionsBg.beginFill(0x000000, 0.1);
+        instructionsBg.drawRoundedRect(-this.width * 0.4, -this.height * 0.4, this.width * 0.8, this.height * 0.8, 20);
+        instructionsBg.endFill();
+        instructionsBg.x = this.width / 2;
+        instructionsBg.y = this.height / 2;
+        this.uiContainer.addChild(instructionsBg);
+
         // Show title and instructions
-        this.messageText.text = 'ESCAPE ORBIT\n\nColonize planets and escape the solar system\n\nTap/Click to Start';
+        this.messageText.text = 'ESCAPE ORBIT\n\n' +
+            'CONTROLS:\n' +
+            '• SPACE/MOUSE: Hold for boost, tap to enter/exit orbit\n' +
+            '• +/- KEYS: Zoom in/out\n\n' +
+            'GAMEPLAY:\n' +
+            '• 🪂 Visit planets by entering orbit\n' +
+            '• 🏴‍☠️ Colonize planets by moving close to their surface\n' +
+            '• Collect fuel pods (🛰️) and avoid hazards (☄️)\n' +
+            '• Win by colonizing all planets\n\n' +
+            'Tap/Click to Start';
 
         // Make the message text interactive and visible
-        this.messageText.interactive = true;
-        this.messageText.buttonMode = true;
+        this.messageText.eventMode = 'static';
+        this.messageText.cursor = 'pointer';
 
         // Add a background rectangle to make the clickable area more visible
         const clickArea = new PIXI.Graphics();
@@ -194,7 +225,7 @@ class Game {
         clickArea.endFill();
         clickArea.x = this.width / 2;
         clickArea.y = this.height / 2;
-        clickArea.interactive = true;
+        clickArea.eventMode = 'static';
         this.uiContainer.addChild(clickArea);
 
         console.log('Setting up click events');
@@ -215,8 +246,8 @@ class Game {
             }
         });
 
-        // Also keep the stage interactive as a fallback (only for title screen)
-        this.stage.interactive = true;
+        // Make the entire stage clickable as fallback
+        this.stage.eventMode = 'static';
         this.stage.on('pointerdown', () => {
             console.log('Stage clicked');
             if (this.gameState === 'title') {
@@ -232,6 +263,20 @@ class Game {
         this.messageText.text = '';
         this.zoom = this.isMobile ? 0.3 : 0.6; // Use 30% zoom on mobile, 60% on desktop
 
+        // Remove any UI elements from the title screen
+        this.uiContainer.children.forEach(child => {
+            if (child !== this.fuelText &&
+                child !== this.scoreText &&
+                child !== this.zoomText &&
+                child !== this.planetCountText &&
+                child !== this.messageText &&
+                child !== this.orbitHelpText &&
+                child !== this.orbitEntryText &&
+                !(this.isMobile ? false : child.text && child.text.includes('Press + to zoom'))) {
+                this.uiContainer.removeChild(child);
+            }
+        });
+
         // Add a short cooldown period to prevent input actions right after starting the game
         this.inputCooldown = true;
         setTimeout(() => {
@@ -239,10 +284,7 @@ class Game {
         }, 500); // 500ms cooldown
 
         // Clear any existing game objects
-        this.gameContainer.removeChildren();
-        this.planets = [];
-        this.hazards = [];
-        this.fuelBoosts = []; // Add initial fuel boosts
+        this.clearGameObjects();
 
         // Create planets
         this.createPlanets();
@@ -262,10 +304,11 @@ class Game {
         // Create fuel boosts
         this.createFuelBoosts(); // Add initial fuel boosts
 
-        // Initialize planet counter - Earth (starting planet) is already visited
-        // There are 8 planets total, but Earth is the starting planet, so there are 7 to visit
-        const totalPlanetsToColonize = this.planets.length - 1; // Exclude starting planet
-        this.planetCountText.text = `🪐 ${1}/${totalPlanetsToColonize} Planets`;
+        // Calculate total planets excluding starting planet
+        const totalPlanets = this.planets.length;
+
+        // Initialize planet counters (will be updated in checkForColonization)
+        this.planetCountText.text = `Visited 🪂: 0/${totalPlanets}\nColonized 🏴‍☠️: 0/${totalPlanets}`;
 
         // Apply initial zoom
         this.applyZoom();
@@ -493,8 +536,12 @@ class Game {
             this.orbitEntryText.visible = false; // We're using visual indicators now instead
 
             // Check for game over conditions
-            if (this.spaceship.fuel <= 0 && !this.spaceship.orbiting) {
-                this.gameOver('Out of fuel! You drift in space forever...');
+            if (this.spaceship.fuel <= 0) {
+                if (this.spaceship.orbiting) {
+                    this.gameOver('Out of fuel! Your ship is stranded in orbit forever...');
+                } else {
+                    this.gameOver('Out of fuel! You drift in space forever...');
+                }
                 return;
             }
         }
@@ -576,36 +623,24 @@ class Game {
     }
 
     updateCamera() {
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+
         // Only follow spaceship if it's not in orbit around starting planet
         if (!this.spaceship.orbiting || this.spaceship.orbiting !== this.planets[CONSTANTS.STARTING_PLANET]) {
-            // Center camera on spaceship with some deadzone
-            const cameraDeadZoneX = this.width * 0.3;
-            const cameraDeadZoneY = this.height * 0.3;
+            // Calculate target position to center the ship
+            const targetX = centerX - this.spaceship.x * this.zoom;
+            const targetY = centerY - this.spaceship.y * this.zoom;
 
-            // How far ship is from center of screen, accounting for zoom
-            const adjustedX = this.spaceship.x * this.zoom;
-            const adjustedY = this.spaceship.y * this.zoom;
-            const centerX = this.width / 2;
-            const centerY = this.height / 2;
-
-            const distX = adjustedX - (centerX - this.gameContainer.x);
-            const distY = adjustedY - (centerY - this.gameContainer.y);
-
-            // Only move camera if ship is outside deadzone
-            if (Math.abs(distX) > cameraDeadZoneX) {
-                const moveX = distX - Math.sign(distX) * cameraDeadZoneX;
-                this.gameContainer.x -= moveX;
-            }
-
-            if (Math.abs(distY) > cameraDeadZoneY) {
-                const moveY = distY - Math.sign(distY) * cameraDeadZoneY;
-                this.gameContainer.y -= moveY;
-            }
+            // Use smooth interpolation for camera movement
+            const cameraSpeed = 0.15; // Adjust this value to control smoothness (0.1 to 0.3 works well)
+            this.gameContainer.x += (targetX - this.gameContainer.x) * cameraSpeed;
+            this.gameContainer.y += (targetY - this.gameContainer.y) * cameraSpeed;
         } else {
             // Smoothly return to initial position when in orbit around starting planet
             const returnSpeed = 0.05;
-            const targetX = this.width / 2 - this.planets[CONSTANTS.STARTING_PLANET].x * this.zoom;
-            const targetY = this.height / 2 - this.planets[CONSTANTS.STARTING_PLANET].y * this.zoom;
+            const targetX = centerX - this.planets[CONSTANTS.STARTING_PLANET].x * this.zoom;
+            const targetY = centerY - this.planets[CONSTANTS.STARTING_PLANET].y * this.zoom;
 
             this.gameContainer.x += (targetX - this.gameContainer.x) * returnSpeed;
             this.gameContainer.y += (targetY - this.gameContainer.y) * returnSpeed;
@@ -615,33 +650,34 @@ class Game {
     checkForColonization() {
         // Count colonized and visited planets
         let colonizedCount = 0;
-        let visitedCount = 1; // Start at 1 for Earth (starting planet)
+        let orbitVisitedCount = 0; // Only planets visited by orbit (parachute)
         let totalPlanetsToColonize = 0;
 
         this.planets.forEach((planet, index) => {
             // Skip the starting planet in the win condition count
             totalPlanetsToColonize++;
             if (index !== CONSTANTS.STARTING_PLANET) {
-
                 if (planet.colonized) {
                     colonizedCount++;
-                }
-                if (planet.visited) {
-                    visitedCount++;
+                } else if (planet.orbitVisited) {
+                    orbitVisitedCount++;
                 }
             }
         });
+
+        // Calculate the total planets excluding the starting planet
+        const totalPlanets = totalPlanetsToColonize; // Exclude starting planet from count
 
         // Update score display (no need to recalculate score each frame)
         this.scoreText.text = `SCORE: ${this.score}`;
 
         // Win condition - all planets except starting planet colonized
-        if (colonizedCount === totalPlanetsToColonize && totalPlanetsToColonize > 0) {
+        if (colonizedCount === totalPlanets && totalPlanets > 0) {
             this.gameOver('Victory! You colonized all planets!', true);
         }
 
-        // Update planet counter
-        this.planetCountText.text = `🪐 ${visitedCount}/${totalPlanetsToColonize} Planets`;
+        // Update planet counter with separate counts for visited and colonized, showing totals
+        this.planetCountText.text = `Visited 🪂: ${orbitVisitedCount}/${totalPlanets}\nColonized 🏴‍☠️: ${colonizedCount}/${totalPlanets}`;
     }
 
     // Separate scoring method for planet visits and colonization
@@ -692,7 +728,7 @@ class Game {
             gameOverText += 'NEW HIGH SCORE!\n\n';
         }
 
-        gameOverText += 'Press ESC to Play Again';
+        gameOverText += 'Click/Tap or Press ESC to Play Again';
 
         this.messageText.text = gameOverText;
 
@@ -703,7 +739,32 @@ class Game {
             this.sounds.explosion.play();
         }
 
-        // Remove click/tap listener to restart - now using ESC key only
+        // Add click/tap listener to restart the game
+        this.setupGameOverClickListener();
+    }
+
+    // Set up click/tap to restart game after game over
+    setupGameOverClickListener() {
+        // Make sure we don't add duplicate listeners
+        this.stage.eventMode = 'static';
+        this.stage.off('pointerdown');
+
+        // Make message text interactive
+        this.messageText.eventMode = 'static';
+        this.messageText.cursor = 'pointer';
+
+        // Add the click/tap listener to both stage and message text
+        this.stage.on('pointerdown', () => {
+            if (this.gameState === 'gameover') {
+                this.startGame();
+            }
+        });
+
+        this.messageText.on('pointerdown', () => {
+            if (this.gameState === 'gameover') {
+                this.startGame();
+            }
+        });
     }
 
     // Control methods called by Controls class
@@ -740,8 +801,15 @@ class Game {
         if (this.inputCooldown) return;
 
         if (this.spaceship && this.spaceship.orbiting && this.gameState === 'playing') {
-            this.spaceship.exitOrbit();
-            this.sounds.orbit.play();
+            const success = this.spaceship.exitOrbit();
+
+            if (success) {
+                // Play orbit exit sound if successful
+                this.sounds.orbit.play();
+            } else if (this.spaceship.fuel < CONSTANTS.BOOST_FUEL_CONSUMPTION * 0.75) {
+                // Show a message if there's not enough fuel to exit orbit
+                this.showMessage("Not enough fuel to exit orbit!", 1500);
+            }
         }
     }
 
@@ -781,21 +849,14 @@ class Game {
         // Set container scale
         this.gameContainer.scale.set(this.zoom);
 
-        // Center the game container
-        if (this.spaceship && !this.spaceship.orbiting) {
-            // Center on spaceship
-            this.gameContainer.x = this.width / 2 - this.spaceship.x * this.zoom;
-            this.gameContainer.y = this.height / 2 - this.spaceship.y * this.zoom;
-        } else if (this.planets.length > 0) {
-            // Center on starting planet
-            const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
-            this.gameContainer.x = this.width / 2 - startingPlanet.x * this.zoom;
-            this.gameContainer.y = this.height / 2 - startingPlanet.y * this.zoom;
-        }
-
-        // Update zoom text
+        // Don't directly set the container position here as it will cause a jump
+        // Instead, let the updateCamera method handle the smooth positioning
+        // Just update the zoom text
         const zoomPercentage = Math.round(this.zoom * 100);
         this.zoomText.text = `ZOOM: ${zoomPercentage}%`;
+
+        // Force camera update to start adjusting to the new zoom level
+        this.updateCamera();
     }
 
     // Try to enter orbit
@@ -966,6 +1027,15 @@ class Game {
 
     // Clear all game objects for reset
     clearGameObjects() {
+        // Properly clean up each planet
+        if (this.planets && this.planets.length > 0) {
+            this.planets.forEach(planet => {
+                if (planet && typeof planet.destroy === 'function') {
+                    planet.destroy();
+                }
+            });
+        }
+
         // Remove all existing planets, hazards, and the spaceship from the container
         this.gameContainer.removeChildren();
 
@@ -987,5 +1057,44 @@ class Game {
             // Check for viewport width (most mobile devices have smaller screens)
             window.innerWidth <= 800
         );
+    }
+
+    // Show a temporary message to the player
+    showMessage(text, duration = 2000) {
+        // Create a temporary message that shows then fades out
+        const message = new PIXI.Text(text, {
+            fontFamily: 'Arial',
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: 0xFFFFFF,
+            align: 'center',
+            stroke: 0x000000,
+            strokeThickness: 3
+        });
+
+        message.anchor.set(0.5);
+        message.x = this.width / 2;
+        message.y = this.height / 2 - 100; // Display above the center
+        this.uiContainer.addChild(message);
+
+        // Animate and remove after duration
+        let elapsed = 0;
+        const ticker = new PIXI.Ticker();
+        ticker.add((delta) => {
+            elapsed += delta * 16.67; // Approximate milliseconds per frame
+
+            if (elapsed >= duration) {
+                // Remove message and stop ticker
+                if (message.parent) {
+                    message.parent.removeChild(message);
+                }
+                ticker.stop();
+                ticker.destroy();
+            } else if (elapsed > duration - 500) {
+                // Fade out in the last 500ms
+                message.alpha = 1 - (elapsed - (duration - 500)) / 500;
+            }
+        });
+        ticker.start();
     }
 } 

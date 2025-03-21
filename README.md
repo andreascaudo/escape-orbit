@@ -6,8 +6,8 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 
 - **Main Goal**: Colonize all planets in the solar system
 - **Scoring**: Based on fuel efficiency, time taken, and planets colonized
-- **Failure Conditions**: Running out of fuel, colliding with the sun or a black hole
-- **Progression**: Levels increase in difficulty with more hazards and complex orbital paths
+- **Failure Conditions**: Running out of fuel, colliding with a meteor, or being consumed by a black hole
+- **Visual Indicators**: Planets show 🪂 when visited by orbit and 🏴‍☠️ when colonized
 
 ## Game Mechanics
 
@@ -15,8 +15,8 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 - **Fuel Management**: Orbiting drains fuel slowly, boosting costs fuel
 - **Trajectory Prediction**: See your predicted flight path when leaving orbit
 - **Colonization**: Reach planets to colonize them and refuel
-- **Hazards**: Avoid meteors and black holes that spawn in outer space
-- **High Score**: Try to colonize all planets with the highest score
+- **Hazards**: Avoid meteors and black holes
+- **Fuel Pods**: Collect satellite fuel pods (🛰️) to replenish your fuel supply
 
 ## Advanced Physics
 
@@ -28,14 +28,13 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 ## Controls
 
 ### Mobile
-- **Touch Controls**: Tap for orbit entry/exit, hold to boost
-- **No Virtual Joystick**: Simplified control scheme for improved mobile experience
-- **Auto-Zoom**: Mobile devices use 30% zoom by default for better visibility
+- **Tap**: Short tap to enter/exit orbit
+- **Hold**: Long tap to boost
 
 ### Desktop
-- **Arrow Keys/WASD**: Rotate ship when not in orbit
-- **Mouse Click**: Click to enter/exit orbit, hold to boost
-- **Space Bar**: Hold for boost, tap to enter/exit orbit
+- **Mouse**: Click to enter/exit orbit, hold to boost
+- **Space Bar**: Tap to enter/exit orbit, hold to boost
+- **+/- Keys**: Zoom in/out (0 to reset zoom)
 - **ESC Key**: Restart game after game over
 
 ## Technologies Used
@@ -43,7 +42,6 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 - **HTML5 Canvas**: For rendering the game in the browser
 - **JavaScript**: Core language for game logic and interactions
 - **PixiJS**: Lightweight 2D rendering engine
-- **NippleJS**: Virtual joystick library for mobile controls
 - **Howler.js**: Audio library for sound effects
 - **LocalStorage**: For saving high scores locally
 

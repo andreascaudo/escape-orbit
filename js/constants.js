@@ -11,9 +11,9 @@ const CONSTANTS = {
 
     // Fuel settings
     MAX_FUEL: 100,
-    ORBIT_FUEL_CONSUMPTION: 0.03,  // Kept the same
-    BOOST_FUEL_CONSUMPTION: 0.4,   // Kept the same
-    PLANET_REFUEL_AMOUNT: 30,      // Increased refuel amount to compensate for higher boost fuel usage
+    ORBIT_FUEL_CONSUMPTION: 0.015,  // Reduced by 50% (from 0.03)
+    BOOST_FUEL_CONSUMPTION: 0.2,    // Reduced by 50% (from 0.4)
+    PLANET_REFUEL_AMOUNT: 30,       // Kept the same to maintain game balance
 
     // Solar System settings
     SUN: {

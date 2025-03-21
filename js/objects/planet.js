@@ -22,6 +22,7 @@ class Planet {
         this.colonized = false;
         this.inOrbitRange = false; // If player is within orbit range
         this.visited = false;
+        this.orbitVisited = false; // New flag to track if visited by orbit
 
         // Score tracking
         this.visitScoreAdded = false;
@@ -89,9 +90,65 @@ class Planet {
         sprite.drawCircle(0, 0, this.radius);
         sprite.endFill();
 
-        // Add visited indicator if visited but not colonized
-        if (this.visited && !this.colonized) {
-            // Draw a smaller star for visited planets
+        // Different indicators based on planet status
+        if (this.colonized) {
+            // COLONIZED: Show pirate flag emoji
+            try {
+                // Create a text object with pirate flag emoji
+                if (!this.flagEmoji) {
+                    this.flagEmoji = new PIXI.Text('🏴‍☠️', {
+                        fontFamily: 'Arial',
+                        fontSize: this.radius * 0.5,
+                        align: 'center'
+                    });
+                    this.flagEmoji.anchor.set(0.5);
+                    // Add the emoji to the sprite
+                    sprite.addChild(this.flagEmoji);
+
+                    // Remove parachute emoji if it exists
+                    if (this.parachuteEmoji && sprite.children.includes(this.parachuteEmoji)) {
+                        sprite.removeChild(this.parachuteEmoji);
+                        this.parachuteEmoji = null;
+                    }
+                } else {
+                    // Update size if planet size changes
+                    this.flagEmoji.style.fontSize = this.radius * 0.5;
+                }
+                console.log(`Pirate flag emoji shown for ${this.name}`);
+            } catch (error) {
+                console.error('Error adding pirate flag emoji:', error);
+                // Ultimate fallback to a simple circle
+                sprite.beginFill(0xFFFFFF);
+                sprite.drawCircle(0, 0, this.radius * 0.2);
+                sprite.endFill();
+            }
+        } else if (this.orbitVisited) {
+            // ORBIT VISITED: Show parachute emoji
+            try {
+                // Create a text object with parachute emoji
+                if (!this.parachuteEmoji) {
+                    this.parachuteEmoji = new PIXI.Text('🪂', {
+                        fontFamily: 'Arial',
+                        fontSize: this.radius * 0.5,
+                        align: 'center'
+                    });
+                    this.parachuteEmoji.anchor.set(0.5);
+                    // Add the emoji to the sprite
+                    sprite.addChild(this.parachuteEmoji);
+                } else {
+                    // Update size if planet size changes
+                    this.parachuteEmoji.style.fontSize = this.radius * 0.5;
+                }
+                console.log(`Parachute emoji shown for ${this.name}`);
+            } catch (error) {
+                console.error('Error adding parachute emoji:', error);
+                // Fallback to a simple outline
+                sprite.lineStyle(2, 0xFFFFFF, 0.7);
+                sprite.drawCircle(0, 0, this.radius + 3);
+                sprite.lineStyle(0);
+            }
+        } else if (this.visited && !this.colonized) {
+            // VISITED NOT COLONIZED: Draw a smaller star (legacy indicator)
             try {
                 sprite.beginFill(0xFFFFFF, 0.9);
 
@@ -127,38 +184,15 @@ class Planet {
             }
         }
 
-        // Add colonization marker if colonized
-        if (this.colonized) {
-            try {
-                // Draw a star using drawPolygon (instead of drawStar which might not be available)
-                sprite.beginFill(0xFFFFFF);
+        // Clean up emojis if they shouldn't be displayed
+        if (!this.colonized && this.flagEmoji && sprite.children.includes(this.flagEmoji)) {
+            sprite.removeChild(this.flagEmoji);
+            this.flagEmoji = null;
+        }
 
-                // Create points for a star shape
-                const points = [];
-                const outerRadius = this.radius * 0.2;
-                const innerRadius = this.radius * 0.1;
-                const numPoints = 5;
-                const startAngle = -Math.PI / 2;
-
-                for (let i = 0; i < numPoints * 2; i++) {
-                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                    const angle = startAngle + (i * Math.PI) / numPoints;
-                    points.push(
-                        radius * Math.cos(angle),
-                        radius * Math.sin(angle)
-                    );
-                }
-
-                sprite.drawPolygon(points);
-                sprite.endFill();
-                console.log(`Star drawn for ${this.name} using polygon`);
-            } catch (error) {
-                console.error('Error drawing star polygon:', error);
-                // Ultimate fallback to a simple circle
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawCircle(0, 0, this.radius * 0.2);
-                sprite.endFill();
-            }
+        if (!this.orbitVisited && this.parachuteEmoji && sprite.children.includes(this.parachuteEmoji)) {
+            sprite.removeChild(this.parachuteEmoji);
+            this.parachuteEmoji = null;
         }
 
         // Set position
@@ -276,17 +310,60 @@ class Planet {
         return this.radius * 6; // Increased from 4x to 6x
     }
 
+    // Mark as visited (generic)
     visit() {
         if (!this.visited) {
             console.log(`Visited planet: ${this.name}`);
             this.visited = true;
+            this.needsUpdate = true;
         }
     }
 
+    // Mark as visited by orbiting
+    visitByOrbit() {
+        if (!this.orbitVisited && !this.colonized) {
+            console.log(`Visited planet by orbit: ${this.name}`);
+            this.orbitVisited = true;
+            this.visited = true; // Also mark as generally visited
+            this.needsUpdate = true;
+        }
+    }
+
+    // Mark as colonized (landing on the planet)
     colonize() {
         console.log(`Colonizing planet: ${this.name}`);
         this.colonized = true;
         this.visited = true; // Also mark as visited
         this.needsUpdate = true;
+    }
+
+    // Clean up resources when the planet is removed
+    destroy() {
+        if (this.flagEmoji) {
+            if (this.sprite && this.sprite.children.includes(this.flagEmoji)) {
+                this.sprite.removeChild(this.flagEmoji);
+            }
+            this.flagEmoji = null;
+        }
+
+        if (this.parachuteEmoji) {
+            if (this.sprite && this.sprite.children.includes(this.parachuteEmoji)) {
+                this.sprite.removeChild(this.parachuteEmoji);
+            }
+            this.parachuteEmoji = null;
+        }
+
+        // Clean up other PIXI objects if needed
+        if (this.orbitIndicator) {
+            this.orbitIndicator.clear();
+        }
+
+        if (this.orbitPath) {
+            this.orbitPath.clear();
+        }
+
+        if (this.sprite) {
+            this.sprite.clear();
+        }
     }
 } 

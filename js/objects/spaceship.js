@@ -253,7 +253,25 @@ class Spaceship {
                 // When orbiting, increase orbit speed
                 this.orbitSpeedBoost = Math.min(this.orbitSpeedBoost + 0.001, this.maxOrbitSpeedBoost);
             }
-        } else if (this.orbitSpeedBoost > 0) {
+        } else if (!this.orbiting && !this.boosting) {
+            // When not boosting and not in orbit, gradually decrease velocity to simulate mild space friction
+            const slowdownFactor = 0.98; // Adjust this value to control how quickly the ship slows down
+            this.vx *= slowdownFactor;
+            this.vy *= slowdownFactor;
+
+            // Maintain a minimum drift speed instead of stopping completely
+            const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            const minDriftSpeed = 5; // Keep drift speed at 5, it is a good speed
+
+            if (currentSpeed > 0 && currentSpeed < minDriftSpeed) {
+                // Scale velocity to maintain minimum speed
+                const scaleFactor = minDriftSpeed / currentSpeed;
+                this.vx *= scaleFactor;
+                this.vy *= scaleFactor;
+            }
+        }
+
+        if (this.orbitSpeedBoost > 0) {
             // Gradually decrease orbit speed boost when not boosting
             this.orbitSpeedBoost = Math.max(0, this.orbitSpeedBoost - 0.0005);
         }
@@ -489,7 +507,14 @@ class Spaceship {
 
         // Mark the planet as visited when entering orbit
         const wasVisited = planet.visited;
-        planet.visit();
+
+        // Use the new orbit-specific visit method if available
+        if (typeof planet.visitByOrbit === 'function') {
+            planet.visitByOrbit();
+        } else {
+            // Fallback to regular visit method
+            planet.visit();
+        }
 
         // Add score for visit if this is first time (if game reference is available)
         if (!wasVisited && window.game) {
@@ -501,6 +526,14 @@ class Spaceship {
 
     exitOrbit() {
         if (this.orbiting && this.fuel > 0) {
+            const fuelCost = CONSTANTS.BOOST_FUEL_CONSUMPTION * 0.75;
+
+            // Check if there's enough fuel to exit orbit
+            if (this.fuel < fuelCost) {
+                console.log("Not enough fuel to exit orbit");
+                return false;
+            }
+
             // Calculate orbital velocity components
             // Tangential velocity is perpendicular to the radius
             const orbitSpeed = Math.sqrt(CONSTANTS.GRAVITY * this.orbiting.radius *
@@ -540,7 +573,7 @@ class Spaceship {
             this.vy = orbitalVY + boostVY;
 
             // Apply small fuel cost for the exit boost
-            this.fuel -= CONSTANTS.BOOST_FUEL_CONSUMPTION * 1.5; // Reduced fuel consumption more
+            this.fuel -= fuelCost;
 
             // Add a small position offset in the direction of travel to ensure immediate escape
             const escapeDistance = this.orbiting.radius * 0.3;
@@ -559,7 +592,9 @@ class Spaceship {
             this.orbiting = null;
 
             console.log("Exiting orbit with velocity:", Math.sqrt(this.vx * this.vx + this.vy * this.vy));
+            return true;
         }
+        return false;
     }
 
     startBoosting() {

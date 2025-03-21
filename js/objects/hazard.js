@@ -119,10 +119,10 @@ class Hazard {
             this.rotation += this.rotationSpeed;
 
             // Wrap around screen
-            if (this.x < -100) this.x = CONSTANTS.SCREEN_WIDTH + 100;
-            if (this.x > CONSTANTS.SCREEN_WIDTH + 100) this.x = -100;
-            if (this.y < -100) this.y = CONSTANTS.SCREEN_HEIGHT + 100;
-            if (this.y > CONSTANTS.SCREEN_HEIGHT + 100) this.y = -100;
+            //if (this.x < -100) this.x = CONSTANTS.SCREEN_WIDTH + 100;
+            //if(this.x > CONSTANTS.SCREEN_WIDTH + 100) this.x = -100;
+            //if (this.y < -100) this.y = CONSTANTS.SCREEN_HEIGHT + 100;
+            //if(this.y > CONSTANTS.SCREEN_HEIGHT + 100) this.y = -100;
         } else if (this.type === 'blackhole') {
             // Black holes don't move, but could pulsate or rotate visually
             this.rotation += 0.01;
@@ -200,5 +200,244 @@ class Hazard {
         }
 
         return null;
+    }
+}
+
+class FuelBoost {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = random(-0.5, 0.5);
+        this.vy = random(-0.5, 0.5);
+        this.radius = 30; // Increased radius even more (was 20)
+        this.rotation = 0;
+        this.rotationSpeed = random(-0.01, 0.01); // Slower rotation for the satellite
+        this.active = true;
+        this.collected = false;
+        this.collectProgress = 0;
+        this.disintegrating = false; // Added disintegration state for planet proximity
+        this.disintegrateProgress = 0;
+        this.fuelAmount = 30 + Math.floor(Math.random() * 20); // Increased fuel amount (was 20-35)
+
+        // Create sprite container
+        this.sprite = new PIXI.Container();
+
+        // Create emoji text
+        this.emoji = new PIXI.Text('🛰️', {
+            fontSize: 48, // Larger emoji (was 32)
+            align: 'center'
+        });
+        this.emoji.anchor.set(0.5);
+
+        // Create glow effect
+        this.glow = new PIXI.Graphics();
+
+        // Add to sprite container
+        this.sprite.addChild(this.glow);
+        this.sprite.addChild(this.emoji);
+
+        // Create fuel animation text (initially hidden)
+        this.fuelText = null;
+
+        this.draw();
+    }
+
+    draw() {
+        // Don't clear the whole sprite, just update the glow
+        this.glow.clear();
+
+        if (this.disintegrating) {
+            // Draw disintegration animation
+            const fadeAlpha = 1 - (this.disintegrateProgress / 20);
+            const particleCount = 8;
+
+            // Draw particles spreading outward
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 / particleCount) * i;
+                const distance = this.disintegrateProgress * 2;
+                const particleX = Math.cos(angle) * distance;
+                const particleY = Math.sin(angle) * distance;
+                const particleSize = Math.max(1, this.radius * (1 - this.disintegrateProgress / 20));
+
+                this.glow.beginFill(0x44AAFF, fadeAlpha);
+                this.glow.drawCircle(particleX, particleY, particleSize / 2);
+                this.glow.endFill();
+            }
+
+            // Fade out the emoji during disintegration
+            this.emoji.alpha = fadeAlpha;
+            return;
+        } else if (this.collected) {
+            // Draw collection animation
+            const fadeAlpha = 1 - (this.collectProgress / 15);
+            const particleCount = 8;
+
+            // Draw particles spreading outward
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 / particleCount) * i;
+                const distance = this.collectProgress * 2;
+                const particleX = Math.cos(angle) * distance;
+                const particleY = Math.sin(angle) * distance;
+                const particleSize = Math.max(1, this.radius * (1 - this.collectProgress / 15));
+
+                this.glow.beginFill(0x44AAFF, fadeAlpha);
+                this.glow.drawCircle(particleX, particleY, particleSize / 2);
+                this.glow.endFill();
+            }
+
+            // Fade out the emoji during collection
+            this.emoji.alpha = fadeAlpha;
+        } else {
+            // Draw glow effect behind emoji
+            this.glow.beginFill(0x44AAFF, 0.3);
+            this.glow.drawCircle(0, 0, this.radius * 1.5);
+            this.glow.endFill();
+
+            // Pulsating effect
+            const pulseScale = 1 + Math.sin(Date.now() * 0.003) * 0.1;
+            this.emoji.scale.set(pulseScale);
+        }
+
+        // Position sprite
+        this.sprite.x = this.x;
+        this.sprite.y = this.y;
+        this.sprite.rotation = this.rotation;
+    }
+
+    update() {
+        if (!this.active) return;
+
+        if (this.disintegrating) {
+            // Update disintegration animation
+            this.disintegrateProgress++;
+            if (this.disintegrateProgress > 20) {
+                this.active = false;
+                this.sprite.visible = false;
+            }
+            this.draw();
+            return;
+        } else if (this.collected) {
+            // Update collection animation
+            this.collectProgress++;
+
+            // Update fuel text animation if it exists
+            if (this.fuelText) {
+                this.fuelText.y -= 1; // Move text upward
+                // Don't fade out the text immediately - let the timeout handle removal
+            }
+
+            if (this.collectProgress > 15) {
+                this.active = false;
+                this.sprite.visible = false;
+
+                // Don't remove the fuel text here - let the timeout handle it
+            }
+            this.draw();
+            return;
+        }
+
+        // Move fuel boost
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Rotate fuel boost
+        this.rotation += this.rotationSpeed;
+
+        // Wrap around screen
+        if (this.x < -100) this.x = CONSTANTS.SCREEN_WIDTH + 100;
+        if (this.x > CONSTANTS.SCREEN_WIDTH + 100) this.x = -100;
+        if (this.y < -100) this.y = CONSTANTS.SCREEN_HEIGHT + 100;
+        if (this.y > CONSTANTS.SCREEN_HEIGHT + 100) this.y = -100;
+
+        // Update sprite
+        this.sprite.x = this.x;
+        this.sprite.y = this.y;
+        this.sprite.rotation = this.rotation;
+
+        // Update glow and pulse effect
+        this.draw();
+    }
+
+    // Check if fuel boost is near a planet
+    checkPlanetInteraction(planets) {
+        if (!this.active || this.collected || this.disintegrating) return;
+
+        // Check if near any planet's atmosphere
+        planets.forEach(planet => {
+            // Calculate distance directly instead of using distance function
+            const dx = this.x - planet.x;
+            const dy = this.y - planet.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // If fuel boost gets close to planet atmosphere, disintegrate it
+            if (dist < planet.atmosphere * 2) {
+                this.startDisintegration();
+                return;
+            }
+        });
+    }
+
+    // Start disintegration effect
+    startDisintegration() {
+        if (this.disintegrating) return;
+        this.disintegrating = true;
+        this.disintegrateProgress = 0;
+        // Stop movement
+        this.vx = 0;
+        this.vy = 0;
+    }
+
+    collect() {
+        if (this.collected || this.disintegrating) return;
+        this.collected = true;
+        this.collectProgress = 0;
+        // Stop movement
+        this.vx = 0;
+        this.vy = 0;
+
+        // Create the floating fuel text
+        if (window.game) {
+            this.fuelText = new PIXI.Text(`Fuel +${this.fuelAmount}`, {
+                fontFamily: 'Arial',
+                fontSize: 18, // Increased text size (was 16)
+                fontWeight: 'bold',
+                fill: 0x44AAFF,
+                align: 'center',
+                dropShadow: true,
+                dropShadowColor: 0x000000,
+                dropShadowDistance: 1
+            });
+            this.fuelText.anchor.set(0.5);
+            this.fuelText.x = this.x;
+            this.fuelText.y = this.y - 40; // Start higher (was -30)
+
+            // Add text to game container
+            window.game.gameContainer.addChild(this.fuelText);
+
+            // Set a timeout to remove the text after 2 seconds
+            setTimeout(() => {
+                if (this.fuelText && this.fuelText.parent) {
+                    this.fuelText.parent.removeChild(this.fuelText);
+                    this.fuelText = null;
+                }
+            }, 2000);
+        }
+    }
+
+    checkCollection(spaceship) {
+        if (!spaceship || !this.active || this.collected || this.disintegrating) return false;
+
+        // Calculate distance directly
+        const dx = this.x - spaceship.x;
+        const dy = this.y - spaceship.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Collection radius is larger to make it easier to hit
+        if (dist < this.radius + 25) { // Increased collision radius (was this.radius + 15)
+            this.collect();
+            return this.fuelAmount;
+        }
+
+        return false;
     }
 } 

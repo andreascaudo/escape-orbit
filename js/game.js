@@ -9,8 +9,11 @@ class Game {
         this.score = 0;
         this.highScore = getHighScore();
 
+        // Detect if on mobile device
+        this.isMobile = this.detectMobile();
+
         // Camera and zoom settings
-        this.zoom = 0.6; // Start with a zoomed out view to see the larger orbits
+        this.zoom = this.isMobile ? 0.3 : 0.6; // Use 30% zoom on mobile, 60% on desktop
         this.minZoom = 0.3; // Allow zooming out further
         this.maxZoom = 2;
 
@@ -24,6 +27,7 @@ class Game {
         // Game objects
         this.planets = [];
         this.hazards = [];
+        this.fuelBoosts = []; // Add fuel boosts array
         this.spaceship = null;
 
         // Text elements
@@ -31,6 +35,7 @@ class Game {
         this.scoreText = null;
         this.messageText = null;
         this.zoomText = null;
+        this.planetCountText = null; // Add planet counter text
         this.orbitHelpText = null;
         this.orbitEntryText = null;
         this.sunWarningText = null;
@@ -113,6 +118,16 @@ class Game {
         this.zoomText.y = 80;
         this.uiContainer.addChild(this.zoomText);
 
+        // Create planet counter
+        this.planetCountText = new PIXI.Text('🪐 1/8 Planets', {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0xFFFFFF
+        });
+        this.planetCountText.x = 20;
+        this.planetCountText.y = 110;
+        this.uiContainer.addChild(this.planetCountText);
+
         // Create zoom instruction
         const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
             fontFamily: 'Arial',
@@ -120,7 +135,7 @@ class Game {
             fill: 0xAAAAAA
         });
         zoomInstructions.x = 20;
-        zoomInstructions.y = 110;
+        zoomInstructions.y = 140;
         this.uiContainer.addChild(zoomInstructions);
 
         // Create orbit help text
@@ -184,19 +199,23 @@ class Game {
 
         console.log('Setting up click events');
 
-        // Listen for click/tap on message text
+        // Listen for click/tap on message text (only for title screen)
         this.messageText.on('pointerdown', () => {
             console.log('Message text clicked');
-            this.startGame();
+            if (this.gameState === 'title') {
+                this.startGame();
+            }
         });
 
-        // Listen for click/tap on background
+        // Listen for click/tap on background (only for title screen)
         clickArea.on('pointerdown', () => {
             console.log('Click area clicked');
-            this.startGame();
+            if (this.gameState === 'title') {
+                this.startGame();
+            }
         });
 
-        // Also keep the stage interactive as a fallback
+        // Also keep the stage interactive as a fallback (only for title screen)
         this.stage.interactive = true;
         this.stage.on('pointerdown', () => {
             console.log('Stage clicked');
@@ -211,12 +230,19 @@ class Game {
         this.gameState = 'playing';
         this.score = 0;
         this.messageText.text = '';
-        this.zoom = 0.6; // Use the same default zoom as constructor
+        this.zoom = this.isMobile ? 0.3 : 0.6; // Use 30% zoom on mobile, 60% on desktop
+
+        // Add a short cooldown period to prevent input actions right after starting the game
+        this.inputCooldown = true;
+        setTimeout(() => {
+            this.inputCooldown = false;
+        }, 500); // 500ms cooldown
 
         // Clear any existing game objects
         this.gameContainer.removeChildren();
         this.planets = [];
         this.hazards = [];
+        this.fuelBoosts = []; // Add initial fuel boosts
 
         // Create planets
         this.createPlanets();
@@ -232,6 +258,14 @@ class Game {
         // Create initial hazards
         this.createHazards();
         console.log('Hazards created:', this.hazards.length);
+
+        // Create fuel boosts
+        this.createFuelBoosts(); // Add initial fuel boosts
+
+        // Initialize planet counter - Earth (starting planet) is already visited
+        // There are 8 planets total, but Earth is the starting planet, so there are 7 to visit
+        const totalPlanetsToColonize = this.planets.length - 1; // Exclude starting planet
+        this.planetCountText.text = `🪐 ${1}/${totalPlanetsToColonize} Planets`;
 
         // Apply initial zoom
         this.applyZoom();
@@ -332,8 +366,8 @@ class Game {
     createHazards() {
         // Create some meteors
         for (let i = 0; i < 10; i++) {
-            const x = Math.random() * this.width;
-            const y = Math.random() * this.height;
+            const x = this.width * Math.random();
+            const y = this.width * Math.random();
 
             // Don't spawn too close to the starting planet
             const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
@@ -345,11 +379,27 @@ class Game {
         }
 
         // Create a black hole
-        const x = this.width * 0.8;
-        const y = this.height * 0.3;
+        const x = this.width * Math.random();
+        const y = this.height * Math.random();
         const blackhole = new Hazard('blackhole', x, y);
         this.hazards.push(blackhole);
         this.gameContainer.addChild(blackhole.sprite);
+    }
+
+    createFuelBoosts() {
+        // Create fewer fuel boosts initially
+        for (let i = 0; i < 2; i++) { // Reduced from 3 to 2
+            const x = Math.random() * this.width;
+            const y = Math.random() * this.height;
+
+            // Don't spawn too close to the starting planet
+            const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
+            if (distance(x, y, startingPlanet.x, startingPlanet.y) < 200) continue;
+
+            const fuelBoost = new FuelBoost(x, y);
+            this.fuelBoosts.push(fuelBoost);
+            this.gameContainer.addChild(fuelBoost.sprite);
+        }
     }
 
     update(delta) {
@@ -405,6 +455,22 @@ class Game {
                     this.sunWarningText.visible = false;
                 }
             }
+
+            // Check if hazards are too close to the sun
+            this.hazards.forEach(hazard => {
+                if (hazard.active && this.sun.checkObjectProximity(hazard)) {
+                    // Disintegrate the hazard
+                    hazard.startDisintegration();
+                }
+            });
+
+            // Check if fuel boosts are too close to the sun
+            this.fuelBoosts.forEach(fuelBoost => {
+                if (fuelBoost.active && this.sun.checkObjectProximity(fuelBoost)) {
+                    // Disintegrate the fuel boost
+                    fuelBoost.startDisintegration();
+                }
+            });
         }
 
         // Update spaceship
@@ -458,13 +524,49 @@ class Game {
             }
         });
 
+        // Update fuel boosts
+        this.fuelBoosts.forEach(fuelBoost => {
+            try {
+                fuelBoost.update();
+                fuelBoost.checkPlanetInteraction(this.planets);
+
+                // Check for collection
+                if (this.spaceship) {
+                    const fuelAmount = fuelBoost.checkCollection(this.spaceship);
+                    if (fuelAmount) {
+                        // Add fuel to spaceship
+                        this.spaceship.fuel = Math.min(CONSTANTS.MAX_FUEL, this.spaceship.fuel + fuelAmount);
+
+                        // Show fuel collection message
+                        this.showMessage(`Collected ${fuelAmount} fuel!`, 1500);
+
+                        // Play sound effect (reuse existing sound)
+                        this.sounds.colonize.play();
+                    }
+                }
+            } catch (error) {
+                console.error("Error with fuel boost:", error);
+                // Deactivate problematic fuel boost to prevent further issues
+                fuelBoost.active = false;
+                if (fuelBoost.sprite && fuelBoost.sprite.parent) {
+                    fuelBoost.sprite.parent.removeChild(fuelBoost.sprite);
+                }
+            }
+        });
+
         // Periodically replace disintegrated meteors to keep the game challenging
         if (this.gameState === 'playing' && Math.random() < 0.01 && activeHazardCount < 15) {
             this.addNewMeteor();
         }
 
-        // Remove inactive hazards
-        this.cleanupInactiveHazards();
+        // Occasionally spawn a new fuel boost if we're below the desired count
+        // Even less frequent spawning (0.002 -> 0.001) and maintain maximum of 2 boosts (reduced from 3)
+        if (this.fuelBoosts.filter(fb => fb.active).length < 2 && Math.random() < 0.001) {
+            this.addNewFuelBoost();
+        }
+
+        // Remove inactive hazards and fuel boosts
+        this.cleanupInactiveObjects();
 
         // Check for colonization
         this.checkForColonization();
@@ -513,13 +615,14 @@ class Game {
     checkForColonization() {
         // Count colonized and visited planets
         let colonizedCount = 0;
-        let visitedCount = 0;
+        let visitedCount = 1; // Start at 1 for Earth (starting planet)
         let totalPlanetsToColonize = 0;
 
         this.planets.forEach((planet, index) => {
             // Skip the starting planet in the win condition count
+            totalPlanetsToColonize++;
             if (index !== CONSTANTS.STARTING_PLANET) {
-                totalPlanetsToColonize++;
+
                 if (planet.colonized) {
                     colonizedCount++;
                 }
@@ -530,12 +633,15 @@ class Game {
         });
 
         // Update score display (no need to recalculate score each frame)
-        this.scoreText.text = `SCORE: ${this.score} | Visited: ${visitedCount}/${totalPlanetsToColonize}`;
+        this.scoreText.text = `SCORE: ${this.score}`;
 
         // Win condition - all planets except starting planet colonized
         if (colonizedCount === totalPlanetsToColonize && totalPlanetsToColonize > 0) {
             this.gameOver('Victory! You colonized all planets!', true);
         }
+
+        // Update planet counter
+        this.planetCountText.text = `🪐 ${visitedCount}/${totalPlanetsToColonize} Planets`;
     }
 
     // Separate scoring method for planet visits and colonization
@@ -550,27 +656,20 @@ class Game {
             this.score += 20;
             planet.visitScoreAdded = true; // Mark that we've already awarded visit points
             console.log(`Added 20 points for visiting ${planet.name}`);
+
+            // Update the score display
+            this.updateScore();
+            // No need to update planet counter here, it's handled in checkForColonization
         }
         else if (action === 'colonize' && !planet.colonizeScoreAdded) {
             this.score += 100;
             planet.colonizeScoreAdded = true; // Mark that we've already awarded colonization points
             console.log(`Added 100 points for colonizing ${planet.name}`);
+
+            // Update the score display
+            this.updateScore();
+            // No need to update planet counter here, it's handled in checkForColonization
         }
-
-        // Update the score display
-        this.scoreText.text = `SCORE: ${this.score} | Visited: ${this.getVisitCount()}/${this.getTotalPlanets()}`;
-    }
-
-    // Helper method to get visited planet count
-    getVisitCount() {
-        return this.planets.filter((planet, index) =>
-            index !== CONSTANTS.STARTING_PLANET && planet.visited
-        ).length;
-    }
-
-    // Helper method to get total planet count (excluding starting planet)
-    getTotalPlanets() {
-        return this.planets.length - 1; // Exclude starting planet
     }
 
     updateScore() {
@@ -593,7 +692,7 @@ class Game {
             gameOverText += 'NEW HIGH SCORE!\n\n';
         }
 
-        gameOverText += 'Tap/Click to Play Again';
+        gameOverText += 'Press ESC to Play Again';
 
         this.messageText.text = gameOverText;
 
@@ -604,14 +703,14 @@ class Game {
             this.sounds.explosion.play();
         }
 
-        // Listen for click/tap to restart
-        this.stage.once('pointerdown', () => {
-            this.startGame();
-        });
+        // Remove click/tap listener to restart - now using ESC key only
     }
 
     // Control methods called by Controls class
     startBoosting() {
+        // Skip during input cooldown period
+        if (this.inputCooldown) return;
+
         if (this.spaceship && this.gameState === 'playing') {
             this.spaceship.startBoosting();
             this.sounds.boost.play();
@@ -637,6 +736,9 @@ class Game {
     }
 
     exitOrbit() {
+        // Skip during input cooldown period
+        if (this.inputCooldown) return;
+
         if (this.spaceship && this.spaceship.orbiting && this.gameState === 'playing') {
             this.spaceship.exitOrbit();
             this.sounds.orbit.play();
@@ -676,25 +778,39 @@ class Game {
     }
 
     applyZoom() {
+        // Set container scale
         this.gameContainer.scale.set(this.zoom);
-        this.zoomText.text = `ZOOM: ${Math.round(this.zoom * 100)}%`;
 
-        // Re-center view after zoom
-        const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
-        if (startingPlanet) {
+        // Center the game container
+        if (this.spaceship && !this.spaceship.orbiting) {
+            // Center on spaceship
+            this.gameContainer.x = this.width / 2 - this.spaceship.x * this.zoom;
+            this.gameContainer.y = this.height / 2 - this.spaceship.y * this.zoom;
+        } else if (this.planets.length > 0) {
+            // Center on starting planet
+            const startingPlanet = this.planets[CONSTANTS.STARTING_PLANET];
             this.gameContainer.x = this.width / 2 - startingPlanet.x * this.zoom;
             this.gameContainer.y = this.height / 2 - startingPlanet.y * this.zoom;
         }
+
+        // Update zoom text
+        const zoomPercentage = Math.round(this.zoom * 100);
+        this.zoomText.text = `ZOOM: ${zoomPercentage}%`;
     }
 
     // Try to enter orbit
     tryEnterOrbit() {
+        // Skip during input cooldown period
+        if (this.inputCooldown) return false;
+
         if (this.spaceship && this.gameState === 'playing' && !this.spaceship.orbiting) {
             if (this.spaceship.tryEnterOrbit()) {
                 // Play orbit sound
                 this.sounds.orbit.play();
+                return true;
             }
         }
+        return false;
     }
 
     // Update orbit indicators on planets
@@ -782,16 +898,94 @@ class Game {
         this.gameContainer.addChild(meteor.sprite);
     }
 
-    // Clean up inactive hazards
-    cleanupInactiveHazards() {
-        // Remove inactive sprites from the game container
+    // Add a new fuel boost
+    addNewFuelBoost() {
+        // Choose a random position at the edge of the visible area, similar to meteors
+        const edge = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+        let x, y;
+
+        // Position fuel boost at the edge of the screen
+        switch (edge) {
+            case 0: // top
+                x = Math.random() * this.width;
+                y = -50;
+                break;
+            case 1: // right
+                x = this.width + 50;
+                y = Math.random() * this.height;
+                break;
+            case 2: // bottom
+                x = Math.random() * this.width;
+                y = this.height + 50;
+                break;
+            case 3: // left
+                x = -50;
+                y = Math.random() * this.height;
+                break;
+        }
+
+        // Adjust for camera position
+        x -= this.gameContainer.x / this.zoom;
+        y -= this.gameContainer.y / this.zoom;
+
+        // Create new fuel boost
+        const fuelBoost = new FuelBoost(x, y);
+
+        // Add velocity toward the center area (with some randomness)
+        const angle = Math.atan2(
+            this.height / 2 - y + (Math.random() - 0.5) * this.height * 0.5,
+            this.width / 2 - x + (Math.random() - 0.5) * this.width * 0.5
+        );
+        const speed = 0.3 + Math.random() * 0.3; // Slower than meteors
+        fuelBoost.vx = Math.cos(angle) * speed;
+        fuelBoost.vy = Math.sin(angle) * speed;
+
+        // Add to game
+        this.fuelBoosts.push(fuelBoost);
+        this.gameContainer.addChild(fuelBoost.sprite);
+    }
+
+    // Clean up inactive objects
+    cleanupInactiveObjects() {
+        // Clean up inactive hazards
         this.hazards.forEach(hazard => {
             if (!hazard.active && hazard.sprite.parent) {
                 this.gameContainer.removeChild(hazard.sprite);
             }
         });
-
-        // Filter out inactive hazards from the array
         this.hazards = this.hazards.filter(hazard => hazard.active || hazard.type === 'blackhole');
+
+        // Clean up inactive fuel boosts
+        this.fuelBoosts.forEach(fuelBoost => {
+            if (!fuelBoost.active && fuelBoost.sprite.parent) {
+                this.gameContainer.removeChild(fuelBoost.sprite);
+            }
+        });
+        this.fuelBoosts = this.fuelBoosts.filter(fuelBoost => fuelBoost.active);
+    }
+
+    // Clear all game objects for reset
+    clearGameObjects() {
+        // Remove all existing planets, hazards, and the spaceship from the container
+        this.gameContainer.removeChildren();
+
+        // Clear arrays
+        this.planets = [];
+        this.hazards = [];
+        this.fuelBoosts = [];
+        this.spaceship = null;
+    }
+
+    // Detect if the user is on a mobile device
+    detectMobile() {
+        return (
+            // Check for touch capability
+            'ontouchstart' in window ||
+            navigator.maxTouchPoints > 0 ||
+            // Check for mobile user agent
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            // Check for viewport width (most mobile devices have smaller screens)
+            window.innerWidth <= 800
+        );
     }
 } 

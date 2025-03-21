@@ -28,14 +28,15 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 ## Controls
 
 ### Mobile
-- **Virtual Joystick**: Control ship direction when not in orbit
-- **Boost Button**: Burn fuel to propel the ship
-- **Double Tap**: Exit orbit and launch away from a planet
+- **Touch Controls**: Tap for orbit entry/exit, hold to boost
+- **No Virtual Joystick**: Simplified control scheme for improved mobile experience
+- **Auto-Zoom**: Mobile devices use 30% zoom by default for better visibility
 
 ### Desktop
 - **Arrow Keys/WASD**: Rotate ship when not in orbit
-- **Up Arrow/W**: Burn fuel to propel the ship
-- **Space Bar**: Exit orbit and launch away from a planet
+- **Mouse Click**: Click to enter/exit orbit, hold to boost
+- **Space Bar**: Hold for boost, tap to enter/exit orbit
+- **ESC Key**: Restart game after game over
 
 ## Technologies Used
 

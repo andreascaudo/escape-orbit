@@ -223,23 +223,10 @@ class Planet {
                 this.orbitIndicator.arc(0, 0, radius, startAngle, endAngle);
             }
 
-            // Add a small "SPACE to orbit" label with planet's color
-            const orbitText = new PIXI.Text("SPACE", {
-                fontFamily: 'Arial',
-                fontSize: 12, // Slightly larger font
-                fill: this.color,
-                align: 'center'
-            });
-            orbitText.anchor.set(0.5);
-            orbitText.x = 0;
-            orbitText.y = -radius - 15; // Position adjusted for orbit
-
-            // Clear any previous text
+            // Clear any previous elements from the indicator
             while (this.orbitIndicator.children.length > 0) {
                 this.orbitIndicator.removeChildAt(0);
             }
-
-            this.orbitIndicator.addChild(orbitText);
         }
 
         // Position the orbit indicator at the planet

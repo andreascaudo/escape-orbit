@@ -128,4 +128,17 @@ class Sun {
 
         return null;
     }
+
+    // Check if a hazard or fuel boost is too close to the sun
+    checkObjectProximity(object) {
+        if (!object || !object.active) return false;
+
+        // Calculate distance between sun and object
+        const dx = this.x - object.x;
+        const dy = this.y - object.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // If the object is within the sun's corona radius, it should be destroyed
+        return dist < this.coronaRadius * 1.2;
+    }
 } 

@@ -48,11 +48,11 @@ The Escape Orbit game is a 2D space exploration game where players control a spa
 ## Next Steps
 
 1. **UI and Player Experience Improvements**
-   - Remove the space help text after player understands controls
-   - Add game info and rules at the beginning (tutorial or intro screen)
-   - Improve communication about game objectives (display number of planets left to visit)
-   - Implement a progress indicator showing colonized/total planets
-   - Design a level progression system for increased challenge
+   - Add more emojis throughout the game UI for better visual cues
+   - Add detailed instructions at the beginning of the game
+   - Reduce text size on mobile devices for better UI scaling
+   - Remove boost button and controller on mobile for a simplified experience
+   - Create a randomly generated solar system after completing the current one
 
 2. **Hazards and Obstacles**
    - Implement black holes that spawn randomly but not directly in planets' orbital paths

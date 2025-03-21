@@ -26,6 +26,10 @@ class Spaceship {
         this.nearbyPlanet = null; // Track the nearest planet in range for orbit
         this.burning = false; // Whether ship is being damaged by the sun
 
+        // Add orbit boost properties
+        this.orbitSpeedBoost = 0;
+        this.maxOrbitSpeedBoost = 0.02; // Maximum boost to orbit speed
+
         // Add properties for gravity reduction after leaving orbit
         this.lastOrbitedPlanet = null;
         this.orbitExitTime = 0;
@@ -39,6 +43,10 @@ class Spaceship {
         this.orbitTransitionProgress = 0;
         this.currentOrbitSpeed = 0;
         this.targetOrbitSpeed = 0;
+
+        // Initial orbit position for smooth transitions
+        this.initialOrbitX = 0;
+        this.initialOrbitY = 0;
 
         // Burning animation properties
         this.burnAnimationTime = 0;
@@ -127,7 +135,7 @@ class Spaceship {
         // Calculate predicted velocity after exit
         // Use the orbit radius that was set when entering orbit
         const orbitSpeed = Math.sqrt(CONSTANTS.GRAVITY * this.orbiting.radius *
-            (this.orbitRadius / this.orbiting.radius)); // Scale speed by orbit radius
+            (this.orbitRadius / this.orbiting.radius)) * (1 + this.orbitSpeedBoost * 10); // Apply orbit speed boost
 
         // Use the correct tangential direction based on orbit direction
         const tangentialDirection = this.orbitAngle + (this.orbitDirection === 1 ? Math.PI / 2 : -Math.PI / 2);
@@ -237,9 +245,17 @@ class Spaceship {
         if (this.boosting && this.fuel > 0) {
             this.fuel -= CONSTANTS.BOOST_FUEL_CONSUMPTION;
 
-            // Apply thrust in direction of ship rotation
-            this.vx += Math.cos(this.rotation) * CONSTANTS.BOOST_POWER;
-            this.vy += Math.sin(this.rotation) * CONSTANTS.BOOST_POWER;
+            if (!this.orbiting) {
+                // Apply thrust in direction of ship rotation when not orbiting
+                this.vx += Math.cos(this.rotation) * CONSTANTS.BOOST_POWER;
+                this.vy += Math.sin(this.rotation) * CONSTANTS.BOOST_POWER;
+            } else {
+                // When orbiting, increase orbit speed
+                this.orbitSpeedBoost = Math.min(this.orbitSpeedBoost + 0.001, this.maxOrbitSpeedBoost);
+            }
+        } else if (this.orbitSpeedBoost > 0) {
+            // Gradually decrease orbit speed boost when not boosting
+            this.orbitSpeedBoost = Math.max(0, this.orbitSpeedBoost - 0.0005);
         }
 
         // Cap fuel at 0-100
@@ -250,7 +266,7 @@ class Spaceship {
             // Handle orbit transition if needed
             if (this.inOrbitTransition) {
                 // Progress the orbit transition
-                this.orbitTransitionProgress += 0.2; // Adjust this value for faster/slower transition
+                this.orbitTransitionProgress += 0.05; // Slower transition to prevent sudden movements
 
                 if (this.orbitTransitionProgress >= 1) {
                     // Transition complete
@@ -262,19 +278,27 @@ class Spaceship {
                 const transitionFactor = smoothstep(0, 1, this.orbitTransitionProgress);
                 this.currentOrbitSpeed = this.targetOrbitSpeed * transitionFactor +
                     (1 - transitionFactor) * (this.currentOrbitSpeed);
+
+                // Update orbit angle based on direction and speed
+                this.orbitAngle += this.orbitDirection * (this.currentOrbitSpeed / this.orbitRadius);
+
+                // Blend position from initial position to orbital position
+                const orbitalX = this.orbiting.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+                const orbitalY = this.orbiting.y + Math.sin(this.orbitAngle) * this.orbitRadius;
+
+                this.x = this.initialOrbitX * (1 - transitionFactor) + orbitalX * transitionFactor;
+                this.y = this.initialOrbitY * (1 - transitionFactor) + orbitalY * transitionFactor;
             } else {
-                // Use constant orbit speed once transition is complete
-                this.currentOrbitSpeed = CONSTANTS.ORBIT_SPEED;
+                // Apply orbit speed boost when boosting
+                this.currentOrbitSpeed = CONSTANTS.ORBIT_SPEED + this.orbitSpeedBoost;
+
+                // Update orbit angle based on direction and speed
+                this.orbitAngle += this.orbitDirection * this.currentOrbitSpeed;
+
+                // Calculate orbital position
+                this.x = this.orbiting.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+                this.y = this.orbiting.y + Math.sin(this.orbitAngle) * this.orbitRadius;
             }
-
-            // Update orbit angle based on direction and speed
-            this.orbitAngle += this.orbitDirection * (this.inOrbitTransition ?
-                this.currentOrbitSpeed / this.orbitRadius :
-                CONSTANTS.ORBIT_SPEED);
-
-            // Calculate orbital position
-            this.x = this.orbiting.x + Math.cos(this.orbitAngle) * this.orbitRadius;
-            this.y = this.orbiting.y + Math.sin(this.orbitAngle) * this.orbitRadius;
 
             // Point ship tangent to orbit, respecting orbit direction
             this.rotation = this.orbitAngle + (this.orbitDirection === 1 ? Math.PI / 2 : -Math.PI / 2);
@@ -418,17 +442,31 @@ class Spaceship {
         // If the approach is more in the opposite direction, reverse orbit direction
         const clockwise = Math.abs(angleDiff) > Math.PI / 2;
 
-        // Set orbit properties
-        this.orbiting = planet;
-        // Use actual current distance from the planet, but ensure minimum size
+        // Get actual current distance from the planet
         const currentDistance = distance(this.x, this.y, planet.x, planet.y);
         const minOrbitRadius = planet.radius * 3; // Minimum orbit radius
         // Use the larger of the current distance or the minimum orbit radius
-        this.orbitRadius = Math.max(currentDistance, minOrbitRadius);
+        const orbitRadius = Math.max(currentDistance, minOrbitRadius);
         // Cap the maximum orbit radius
         const maxOrbitRadius = planet.radius * 8; // Maximum orbit radius
-        this.orbitRadius = Math.min(this.orbitRadius, maxOrbitRadius);
+        const finalOrbitRadius = Math.min(orbitRadius, maxOrbitRadius);
+
+        // Important: Position the ship at the exact distance from the planet
+        // to prevent the teleportation effect
+        this.x = planet.x + Math.cos(currentOrbitAngle) * finalOrbitRadius;
+        this.y = planet.y + Math.sin(currentOrbitAngle) * finalOrbitRadius;
+
+        // Store the initial position to prevent teleporting during transition
+        this.initialOrbitX = this.x;
+        this.initialOrbitY = this.y;
+
+        // Set orbit properties - do this after positioning to prevent jumps
+        this.orbiting = planet;
+        this.orbitRadius = finalOrbitRadius;
         this.orbitAngle = currentOrbitAngle;
+
+        // Reset orbit speed boost
+        this.orbitSpeedBoost = 0;
 
         // Store the ship's previous velocity for smooth transition
         const prevSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
@@ -466,7 +504,7 @@ class Spaceship {
             // Calculate orbital velocity components
             // Tangential velocity is perpendicular to the radius
             const orbitSpeed = Math.sqrt(CONSTANTS.GRAVITY * this.orbiting.radius *
-                (this.orbitRadius / this.orbiting.radius)); // Scale speed by orbit radius
+                (this.orbitRadius / this.orbiting.radius)) * (1 + this.orbitSpeedBoost * 10); // Apply boost effect to exit velocity
 
             // Calculate tangential direction (perpendicular to radius)
             const tangentialDirection = this.orbitAngle + (this.orbitDirection === 1 ? Math.PI / 2 : -Math.PI / 2);
@@ -513,6 +551,9 @@ class Spaceship {
             this.lastOrbitedPlanet = this.orbiting;
             this.exitingOrbit = true;
             this.orbitExitCounter = 0;
+
+            // Reset orbit speed boost
+            this.orbitSpeedBoost = 0;
 
             // Clear orbit reference
             this.orbiting = null;

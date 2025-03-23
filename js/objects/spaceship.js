@@ -51,6 +51,12 @@ class Spaceship {
         // Burning animation properties
         this.burnAnimationTime = 0;
 
+        // Track planets we've passed through to prevent multiple scoring events
+        this.recentPassedPlanets = {};
+
+        // Track which planets the ship is currently inside of
+        this.currentlyInsidePlanets = {};
+
         // Create sprite
         this.sprite = new PIXI.Graphics();
 
@@ -261,7 +267,7 @@ class Spaceship {
 
             // Maintain a minimum drift speed instead of stopping completely
             const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-            const minDriftSpeed = 5; // Keep drift speed at 5, it is a good speed
+            const minDriftSpeed = 6; // Keep drift speed at 5, it is a good speed
 
             if (currentSpeed > 0 && currentSpeed < minDriftSpeed) {
                 // Scale velocity to maintain minimum speed
@@ -393,8 +399,17 @@ class Spaceship {
         this.nearbyPlanet = null;
         let closestDistance = Infinity;
 
+        // Reduce cooldown timers for all recently passed planets
+        Object.keys(this.recentPassedPlanets).forEach(planetId => {
+            this.recentPassedPlanets[planetId]--;
+            if (this.recentPassedPlanets[planetId] <= 0) {
+                delete this.recentPassedPlanets[planetId];
+            }
+        });
+
         planets.forEach(planet => {
             const dist = distance(this.x, this.y, planet.x, planet.y);
+            const planetId = planet.name || planets.indexOf(planet);
 
             // Check if we're in orbit range of the planet
             if (dist > planet.radius * 1.2 && dist < planet.atmosphere * 6) { // Increased from 3 to 5
@@ -406,22 +421,46 @@ class Spaceship {
 
                 // Update the planet's orbit indicator with player's position
                 planet.updateOrbitIndicator(true, this.x, this.y);
+
+                // If we were inside this planet before and now we're outside, mark as no longer inside
+                if (this.currentlyInsidePlanets[planetId]) {
+                    delete this.currentlyInsidePlanets[planetId];
+                }
             } else {
                 // Turn off orbit indicator if out of range
                 planet.updateOrbitIndicator(false);
             }
 
-            // If we're very close to the planet and it's not colonized yet
-            if (dist < planet.radius * 1.1 && !planet.colonized) {
-                // Colonize the planet and get fuel
-                planet.colonize();
-
-                // Add score for colonization (if game reference is available)
-                if (window.game) {
-                    window.game.addScoreForPlanetAction(planet, 'colonize');
-                }
-
+            // If we're very close to the planet, get fuel regardless of visit status
+            if (dist < planet.radius * 1.1) {
+                // Add fuel - always get fuel even if planet was visited
                 this.fuel += CONSTANTS.PLANET_REFUEL_AMOUNT;
+
+                // Check if we weren't inside this planet before
+                if (!this.currentlyInsidePlanets[planetId]) {
+                    // Mark that we're now inside this planet
+                    this.currentlyInsidePlanets[planetId] = true;
+
+                    // Only proceed if we haven't recently passed through this planet
+                    if (!this.recentPassedPlanets[planetId] && window.game) {
+                        // Set a cooldown for this planet (120 frames = ~2 seconds)
+                        this.recentPassedPlanets[planetId] = 120;
+
+                        // Check if this planet has already been visited by orbit
+                        if (!planet.orbitVisited) {
+                            // Use the new method to mark the planet as eligible for bonus
+                            if (typeof planet.markForDirectPassBonus === 'function') {
+                                planet.markForDirectPassBonus();
+                            }
+
+                            // Add direct pass score
+                            window.game.addScoreForDirectPass(planet);
+                        } else {
+                            // If planet already visited, just show a message about fuel refill (no points)
+                            window.game.showFuelRefillMessage(planet);
+                        }
+                    }
+                }
             }
         });
     }
@@ -505,20 +544,21 @@ class Spaceship {
         // Don't set velocity to 0 immediately - we'll transition it
         // This preserves momentum for a more realistic orbit entry
 
-        // Mark the planet as visited when entering orbit
-        const wasVisited = planet.visited;
+        // Check if this planet was already visited by orbit
+        const wasOrbitVisited = planet.orbitVisited;
 
-        // Use the new orbit-specific visit method if available
-        if (typeof planet.visitByOrbit === 'function') {
-            planet.visitByOrbit();
-        } else {
-            // Fallback to regular visit method
-            planet.visit();
-        }
+        // Use the orbit-specific visit method
+        planet.visitByOrbit();
 
         // Add score for visit if this is first time (if game reference is available)
-        if (!wasVisited && window.game) {
-            window.game.addScoreForPlanetAction(planet, 'visit');
+        if (!wasOrbitVisited && window.game) {
+            window.game.addScoreForPlanetAction(planet, 'visitByOrbit');
+        }
+
+        // Check for bonus multiplier if planet is eligible
+        // We now check recentlyDirectVisited instead of visited flag 
+        if (window.game && typeof planet.isEligibleForBonus === 'function' && planet.isEligibleForBonus()) {
+            window.game.addBonusScore(planet);
         }
 
         console.log(`Entering orbit: approach angle=${approachAngle}, tangential=${tangentialDirection}, clockwise=${clockwise}`);
@@ -532,6 +572,11 @@ class Spaceship {
             if (this.fuel < fuelCost) {
                 console.log("Not enough fuel to exit orbit");
                 return false;
+            }
+
+            // Start the visit timer for the planet we're leaving (if it has this method)
+            if (typeof this.orbiting.startVisitTimer === 'function') {
+                this.orbiting.startVisitTimer();
             }
 
             // Calculate orbital velocity components

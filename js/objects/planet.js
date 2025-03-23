@@ -19,14 +19,24 @@ class Planet {
         this.atmosphere = config.radius * 1.2; // Atmosphere radius
         this.gravitationalField = config.radius * 6; // Reduced from 8 to 6 for smaller field
         this.orbitRange = config.radius * 3; // Range where player can enter orbit
-        this.colonized = false;
         this.inOrbitRange = false; // If player is within orbit range
         this.visited = false;
         this.orbitVisited = false; // New flag to track if visited by orbit
+        this.isStartingPlanet = false; // Flag to identify Earth (the starting planet)
+
+        // Bonus multiplier tracking
+        this.recentlyDirectVisited = false; // Flag to track if planet was recently directly visited
+        this.directVisitTime = 0; // Timer to track how long ago the direct visit happened
+        this.directVisitWindow = 60 * 5; // 5 seconds window (at 60fps) to get bonus
+
+        // Timer for visited status (in frames, 60fps = 180 seconds or 3 minutes)
+        this.visitTimer = 0;
+        this.visitDuration = 60 * 180; // 3 minutes at 60fps
+        this.visitTimerActive = false;
 
         // Score tracking
         this.visitScoreAdded = false;
-        this.colonizeScoreAdded = false;
+        this.bonusScoreAdded = false; // Track if bonus score was already added
 
         // Create graphics container for the planet
         this.sprite = new PIXI.Graphics();
@@ -36,6 +46,9 @@ class Planet {
 
         // Create orbit indicator
         this.orbitIndicator = new PIXI.Graphics();
+
+        // Create timer indicator
+        this.timerIndicator = new PIXI.Graphics();
 
         // Create label for the planet
         this.label = new PIXI.Text(this.name, {
@@ -65,6 +78,8 @@ class Planet {
 
     drawPlanet() {
         const sprite = this.sprite;
+
+        // Clear the old graphics
         sprite.clear();
 
         // Draw gravitational field with a more gradual fade and reduced opacity
@@ -90,40 +105,8 @@ class Planet {
         sprite.drawCircle(0, 0, this.radius);
         sprite.endFill();
 
-        // Different indicators based on planet status
-        if (this.colonized) {
-            // COLONIZED: Show pirate flag emoji
-            try {
-                // Create a text object with pirate flag emoji
-                if (!this.flagEmoji) {
-                    this.flagEmoji = new PIXI.Text('🏴‍☠️', {
-                        fontFamily: 'Arial',
-                        fontSize: this.radius * 0.5,
-                        align: 'center'
-                    });
-                    this.flagEmoji.anchor.set(0.5);
-                    // Add the emoji to the sprite
-                    sprite.addChild(this.flagEmoji);
-
-                    // Remove parachute emoji if it exists
-                    if (this.parachuteEmoji && sprite.children.includes(this.parachuteEmoji)) {
-                        sprite.removeChild(this.parachuteEmoji);
-                        this.parachuteEmoji = null;
-                    }
-                } else {
-                    // Update size if planet size changes
-                    this.flagEmoji.style.fontSize = this.radius * 0.5;
-                }
-                console.log(`Pirate flag emoji shown for ${this.name}`);
-            } catch (error) {
-                console.error('Error adding pirate flag emoji:', error);
-                // Ultimate fallback to a simple circle
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawCircle(0, 0, this.radius * 0.2);
-                sprite.endFill();
-            }
-        } else if (this.orbitVisited) {
-            // ORBIT VISITED: Show parachute emoji
+        // If this planet was visited by orbit, show parachute emoji
+        if (this.visited) {
             try {
                 // Create a text object with parachute emoji
                 if (!this.parachuteEmoji) {
@@ -142,54 +125,14 @@ class Planet {
                 console.log(`Parachute emoji shown for ${this.name}`);
             } catch (error) {
                 console.error('Error adding parachute emoji:', error);
-                // Fallback to a simple outline
-                sprite.lineStyle(2, 0xFFFFFF, 0.7);
-                sprite.drawCircle(0, 0, this.radius + 3);
-                sprite.lineStyle(0);
-            }
-        } else if (this.visited && !this.colonized) {
-            // VISITED NOT COLONIZED: Draw a smaller star (legacy indicator)
-            try {
-                sprite.beginFill(0xFFFFFF, 0.9);
-
-                // Create points for a star shape (smaller than colonization star)
-                const points = [];
-                const outerRadius = this.radius * 0.15;
-                const innerRadius = this.radius * 0.07;
-                const numPoints = 5;
-                const startAngle = -Math.PI / 2;
-
-                for (let i = 0; i < numPoints * 2; i++) {
-                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                    const angle = startAngle + (i * Math.PI) / numPoints;
-                    points.push(
-                        radius * Math.cos(angle),
-                        radius * Math.sin(angle)
-                    );
-                }
-
-                sprite.drawPolygon(points);
+                // Fallback to a simple shape
+                sprite.beginFill(0xFFFFFF);
+                sprite.drawCircle(0, 0, this.radius * 0.2);
                 sprite.endFill();
-
-                // Also draw an outline around the planet
-                sprite.lineStyle(2, 0xFFFFFF, 0.5);
-                sprite.drawCircle(0, 0, this.radius + 3);
-                sprite.lineStyle(0);
-            } catch (error) {
-                console.error('Error drawing visited star:', error);
-                // Fallback
-                sprite.lineStyle(2, 0xFFFFFF, 0.7);
-                sprite.drawCircle(0, 0, this.radius + 3);
-                sprite.lineStyle(0);
             }
         }
 
         // Clean up emojis if they shouldn't be displayed
-        if (!this.colonized && this.flagEmoji && sprite.children.includes(this.flagEmoji)) {
-            sprite.removeChild(this.flagEmoji);
-            this.flagEmoji = null;
-        }
-
         if (!this.orbitVisited && this.parachuteEmoji && sprite.children.includes(this.parachuteEmoji)) {
             sprite.removeChild(this.parachuteEmoji);
             this.parachuteEmoji = null;
@@ -201,7 +144,7 @@ class Planet {
 
         // Update label style based on visit status
         if (this.visited) {
-            this.label.style.fill = this.colonized ? 0xFFDD33 : 0xAAFFFF;
+            this.label.style.fill = 0xAAFFFF;
         } else {
             this.label.style.fill = 0xFFFFFF;
         }
@@ -268,6 +211,44 @@ class Planet {
         this.orbitIndicator.y = this.y;
     }
 
+    update() {
+        if (this.needsUpdate) {
+            this.drawPlanet();
+            this.needsUpdate = false;
+        }
+
+        // Update position based on orbit around sun
+        if (this.orbitRadius > 0 && this.orbitSpeed > 0) {
+            this.orbitAngle += this.orbitSpeed;
+            this.updatePosition();
+        }
+
+        // Update direct visit window timer
+        if (this.recentlyDirectVisited) {
+            this.directVisitTime++;
+
+            // If the time window has expired, reset the flag
+            if (this.directVisitTime >= this.directVisitWindow) {
+                this.recentlyDirectVisited = false;
+                this.directVisitTime = 0;
+            }
+        }
+
+        // Handle visit timer if active and not the starting planet
+        if (this.visitTimerActive && !this.isStartingPlanet) {
+            this.visitTimer--;
+
+            // Update the timer indicator
+            this.updateTimerIndicator();
+
+            // Reset visited status when timer reaches zero
+            if (this.visitTimer <= 0) {
+                this.resetVisitedStatus();
+            }
+        }
+    }
+
+    // Update position based on orbit angle
     updatePosition() {
         if (this.orbitRadius <= 0 || !this.sunX || !this.sunY) return;
 
@@ -288,19 +269,11 @@ class Planet {
             this.orbitIndicator.x = this.x;
             this.orbitIndicator.y = this.y;
         }
-    }
 
-    update() {
-        // Update orbit angle for animation
-        if (this.orbitRadius > 0 && this.orbitSpeed > 0) {
-            this.orbitAngle += this.orbitSpeed;
-            this.updatePosition();
-        }
-
-        // Update visuals if needed
-        if (this.needsUpdate) {
-            this.drawPlanet();
-            this.needsUpdate = false;
+        // Update timer indicator position
+        if (this.timerIndicator) {
+            this.timerIndicator.x = this.x;
+            this.timerIndicator.y = this.y;
         }
     }
 
@@ -319,33 +292,42 @@ class Planet {
         }
     }
 
+    // Mark as visited by directly passing through the planet
+    visitDirect() {
+        if (!this.visited) {
+            console.log(`Directly visited planet: ${this.name}`);
+            this.visited = true;
+            this.needsUpdate = true;
+
+            // Set the flag for the bonus multiplier
+            this.recentlyDirectVisited = true;
+            this.directVisitTime = 0;
+        }
+    }
+
+    // Mark planet as eligible for bonus without setting it as visited
+    markForDirectPassBonus() {
+        console.log(`Marking ${this.name} as eligible for bonus (direct pass)`);
+
+        // Set the flag for the bonus multiplier
+        this.recentlyDirectVisited = true;
+        this.directVisitTime = 0;
+    }
+
     // Mark as visited by orbiting
     visitByOrbit() {
-        if (!this.orbitVisited && !this.colonized) {
+        if (!this.orbitVisited) {
             console.log(`Visited planet by orbit: ${this.name}`);
             this.orbitVisited = true;
             this.visited = true; // Also mark as generally visited
             this.needsUpdate = true;
-        }
-    }
 
-    // Mark as colonized (landing on the planet)
-    colonize() {
-        console.log(`Colonizing planet: ${this.name}`);
-        this.colonized = true;
-        this.visited = true; // Also mark as visited
-        this.needsUpdate = true;
+            // Don't start the timer here - it will be started when exiting orbit
+        }
     }
 
     // Clean up resources when the planet is removed
     destroy() {
-        if (this.flagEmoji) {
-            if (this.sprite && this.sprite.children.includes(this.flagEmoji)) {
-                this.sprite.removeChild(this.flagEmoji);
-            }
-            this.flagEmoji = null;
-        }
-
         if (this.parachuteEmoji) {
             if (this.sprite && this.sprite.children.includes(this.parachuteEmoji)) {
                 this.sprite.removeChild(this.parachuteEmoji);
@@ -365,5 +347,102 @@ class Planet {
         if (this.sprite) {
             this.sprite.clear();
         }
+    }
+
+    // Create a gradient texture for glow effects
+    createGradientTexture(radius, color, backgroundColor, alpha, backgroundAlpha) {
+        // Create a canvas for the gradient
+        const quality = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = quality;
+        canvas.height = quality;
+
+        const ctx = canvas.getContext('2d');
+
+        // Create a radial gradient
+        const gradient = ctx.createRadialGradient(
+            quality / 2,
+            quality / 2,
+            0,
+            quality / 2,
+            quality / 2,
+            quality / 2
+        );
+
+        // Add color stops
+        gradient.addColorStop(0, PIXI.utils.hex2string(color) + (alpha !== undefined ? Math.round(alpha * 255).toString(16) : 'FF'));
+        gradient.addColorStop(1, PIXI.utils.hex2string(backgroundColor || 0x000000) + (backgroundAlpha !== undefined ? Math.round(backgroundAlpha * 255).toString(16) : '00'));
+
+        // Fill with gradient
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, quality, quality);
+
+        // Create PIXI texture from canvas
+        const texture = PIXI.Texture.from(canvas);
+
+        return texture;
+    }
+
+    // Method to update the timer indicator
+    updateTimerIndicator() {
+        this.timerIndicator.clear();
+
+        if (this.visitTimerActive && this.visitTimer > 0) {
+            // Calculate timer percentage
+            const percentage = this.visitTimer / this.visitDuration;
+
+            // Draw timer arc
+            this.timerIndicator.lineStyle(3, this.color, 1);
+            this.timerIndicator.arc(
+                0, 0, // Center of the circle
+                this.radius + 8, // Radius of the timer circle
+                0, // Start angle (0 radians is at 3 o'clock)
+                Math.PI * 2 * percentage, // End angle based on percentage remaining
+                false // counterclockwise
+            );
+
+            // Position the timer indicator
+            this.timerIndicator.x = this.x;
+            this.timerIndicator.y = this.y;
+        }
+    }
+
+    // Method to reset visited status when timer expires
+    resetVisitedStatus() {
+        this.visited = false;
+        this.orbitVisited = false;
+        this.visitTimerActive = false;
+        this.visitScoreAdded = false; // Allow planet to give points again
+        this.recentlyDirectVisited = false;
+        this.directVisitTime = 0;
+        this.bonusScoreAdded = false; // Reset bonus score flag
+        this.timerIndicator.clear();
+        this.needsUpdate = true;
+        console.log(`Visit timer expired for ${this.name}. Planet is no longer marked as visited.`);
+    }
+
+    // Method to start the visit timer
+    startVisitTimer() {
+        // Don't start timer for starting planet (Earth)
+        if (this.isStartingPlanet) return;
+
+        this.visitTimer = this.visitDuration;
+        this.visitTimerActive = true;
+        this.updateTimerIndicator();
+    }
+
+    // Mark as Earth (the starting planet)
+    markAsStartingPlanet() {
+        this.isStartingPlanet = true;
+    }
+
+    // Check if eligible for bonus multiplier (called when entering orbit)
+    isEligibleForBonus() {
+        return this.recentlyDirectVisited && !this.bonusScoreAdded;
+    }
+
+    // Mark that the bonus score has been added
+    markBonusAdded() {
+        this.bonusScoreAdded = true;
     }
 } 

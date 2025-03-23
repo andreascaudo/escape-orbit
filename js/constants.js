@@ -10,7 +10,7 @@ const CONSTANTS = {
     BOOST_POWER: 0.18,      // Kept the same
 
     // Fuel settings
-    MAX_FUEL: 100,
+    MAX_FUEL: 10000,
     ORBIT_FUEL_CONSUMPTION: 0.015,  // Reduced by 50% (from 0.03)
     BOOST_FUEL_CONSUMPTION: 0.2,    // Reduced by 50% (from 0.4)
     PLANET_REFUEL_AMOUNT: 30,       // Kept the same to maintain game balance
@@ -43,7 +43,7 @@ const CONSTANTS = {
         {
             name: "Earth",
             radius: 40,
-            color: 0x0077ff,
+            color: 0x5a8b5d,
             orbitRadius: 900,
             orbitSpeed: 0.005,
             orbitAngle: 2.1
@@ -61,7 +61,7 @@ const CONSTANTS = {
             radius: 70,
             color: 0xffaa22,
             orbitRadius: 1400,
-            orbitSpeed: 0.002,
+            orbitSpeed: 0.003,
             orbitAngle: 3.5
         },
         {
@@ -69,7 +69,7 @@ const CONSTANTS = {
             radius: 60,
             color: 0xffdd44,
             orbitRadius: 1700,
-            orbitSpeed: 0.0015,
+            orbitSpeed: 0.002,
             orbitAngle: 4.2
         },
         {
@@ -77,7 +77,7 @@ const CONSTANTS = {
             radius: 45,
             color: 0x44aaff,
             orbitRadius: 1925,
-            orbitSpeed: 0.001,
+            orbitSpeed: 0.002,
             orbitAngle: 5.6
         },
         {
@@ -85,7 +85,7 @@ const CONSTANTS = {
             radius: 45,
             color: 0x4444ff,
             orbitRadius: 2150,
-            orbitSpeed: 0.0008,
+            orbitSpeed: 0.002,
             orbitAngle: 0.3
         }
     ],

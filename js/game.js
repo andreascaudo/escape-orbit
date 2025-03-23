@@ -126,7 +126,7 @@ class Game {
         this.uiContainer.addChild(this.zoomText);
 
         // Create planet counter with more space
-        this.planetCountText = new PIXI.Text('Visited 🪂: 0/8\nColonized 🏴‍☠️: 0/8', {
+        this.planetCountText = new PIXI.Text('Visited 🪂: 1/8', {
             fontFamily: 'Arial',
             fontSize: 16,
             fill: 0xFFFFFF
@@ -263,6 +263,9 @@ class Game {
         this.messageText.text = '';
         this.zoom = this.isMobile ? 0.3 : 0.6; // Use 30% zoom on mobile, 60% on desktop
 
+        // Reset bonus flags
+        this.allPlanetsBonus = false;
+
         // Remove any UI elements from the title screen
         this.uiContainer.children.forEach(child => {
             if (child !== this.fuelText &&
@@ -308,7 +311,7 @@ class Game {
         const totalPlanets = this.planets.length;
 
         // Initialize planet counters (will be updated in checkForColonization)
-        this.planetCountText.text = `Visited 🪂: 0/${totalPlanets}\nColonized 🏴‍☠️: 0/${totalPlanets}`;
+        this.planetCountText.text = `Visited 🪂: 1/${totalPlanets}`;
 
         // Apply initial zoom
         this.applyZoom();
@@ -360,6 +363,11 @@ class Game {
             // Set the Sun's position for each planet's orbit
             planet.setSunPosition(centerX, centerY);
 
+            // Mark Earth (starting planet) so it doesn't have a timer
+            if (index === CONSTANTS.STARTING_PLANET) {
+                planet.markAsStartingPlanet();
+            }
+
             // Add orbit path to game container
             this.gameContainer.addChild(planet.orbitPath);
 
@@ -371,12 +379,15 @@ class Game {
             planet.updateOrbitIndicator(false);
             this.gameContainer.addChild(planet.orbitIndicator);
 
+            // Add timer indicator to game container
+            this.gameContainer.addChild(planet.timerIndicator);
+
             // Add planet label to game container
             this.gameContainer.addChild(planet.label);
         });
 
-        // Colonize the starting planet (Earth)
-        this.planets[CONSTANTS.STARTING_PLANET].colonize();
+        // Mark the starting planet as visited
+        this.planets[CONSTANTS.STARTING_PLANET].visitByOrbit();
     }
 
     createSpaceship() {
@@ -518,31 +529,33 @@ class Game {
 
         // Update spaceship
         if (this.spaceship) {
-            this.spaceship.update(this.planets);
+            try {
+                this.spaceship.update(this.planets);
+                this.updateCamera();
 
-            // Update camera
-            this.updateCamera();
+                // Update fuel display
+                this.fuelText.text = `FUEL: ${Math.floor(this.spaceship.fuel)}%`;
 
-            // Update fuel display
-            this.fuelText.text = `FUEL: ${Math.floor(this.spaceship.fuel)}%`;
+                // Show orbit help text when in orbit
+                this.orbitHelpText.visible = !!this.spaceship.orbiting;
 
-            // Show orbit help text when in orbit
-            this.orbitHelpText.visible = !!this.spaceship.orbiting;
+                // Update orbit indicators on all planets
+                this.updateOrbitIndicators();
 
-            // Update orbit indicators on all planets
-            this.updateOrbitIndicators();
+                // Show orbit entry text when near a planet but not in orbit
+                this.orbitEntryText.visible = false; // We're using visual indicators now instead
 
-            // Show orbit entry text when near a planet but not in orbit
-            this.orbitEntryText.visible = false; // We're using visual indicators now instead
-
-            // Check for game over conditions
-            if (this.spaceship.fuel <= 0) {
-                if (this.spaceship.orbiting) {
-                    this.gameOver('Out of fuel! Your ship is stranded in orbit forever...');
-                } else {
-                    this.gameOver('Out of fuel! You drift in space forever...');
+                // Check for game over conditions
+                if (this.spaceship.fuel <= 0) {
+                    if (this.spaceship.orbiting) {
+                        this.gameOver('Out of fuel! Your ship is stranded in orbit forever...');
+                    } else {
+                        this.gameOver('Out of fuel! You drift in space forever...');
+                    }
+                    return;
                 }
-                return;
+            } catch (error) {
+                console.error('Error updating spaceship:', error);
             }
         }
 
@@ -615,6 +628,12 @@ class Game {
         // Remove inactive hazards and fuel boosts
         this.cleanupInactiveObjects();
 
+        // Process any pending animations
+        if (this.pendingAnimations && this.pendingAnimations.length > 0) {
+            // Filter out animations that have returned false (completed)
+            this.pendingAnimations = this.pendingAnimations.filter(animation => animation());
+        }
+
         // Check for colonization
         this.checkForColonization();
 
@@ -648,64 +667,275 @@ class Game {
     }
 
     checkForColonization() {
-        // Count colonized and visited planets
-        let colonizedCount = 0;
-        let orbitVisitedCount = 0; // Only planets visited by orbit (parachute)
-        let totalPlanetsToColonize = 0;
+        // Count visited planets
+        let visitedCount = 1; // Start with Earth already visited
+        let totalPlanets = 0;
 
         this.planets.forEach((planet, index) => {
-            // Skip the starting planet in the win condition count
-            totalPlanetsToColonize++;
+            totalPlanets++;
             if (index !== CONSTANTS.STARTING_PLANET) {
-                if (planet.colonized) {
-                    colonizedCount++;
-                } else if (planet.orbitVisited) {
-                    orbitVisitedCount++;
+                if (planet.orbitVisited) {
+                    visitedCount++;
                 }
             }
         });
 
-        // Calculate the total planets excluding the starting planet
-        const totalPlanets = totalPlanetsToColonize; // Exclude starting planet from count
-
         // Update score display (no need to recalculate score each frame)
         this.scoreText.text = `SCORE: ${this.score}`;
 
-        // Win condition - all planets except starting planet colonized
-        if (colonizedCount === totalPlanets && totalPlanets > 0) {
-            this.gameOver('Victory! You colonized all planets!', true);
+        // Award bonus when all planets are visited, but don't end the game
+        if (visitedCount === totalPlanets && totalPlanets > 0) {
+            // Add a big bonus for visiting all planets
+            if (!this.allPlanetsBonus) {
+                this.allPlanetsBonus = true;
+                this.score += 1000;
+                this.showMessage(`COSMIC ACHIEVEMENT: +1000 POINTS\nFor visiting all planets!`, 4000);
+                console.log(`Added 1000 points bonus for visiting all planets!`);
+                this.updateScore();
+
+                // Create a special celebration effect
+                this.createCompletionCelebration();
+
+                // Show the second message with a delay to prevent overlap
+                setTimeout(() => {
+                    this.showMessage(`All planets visited! Continue exploring!`, 3000);
+                }, 4500); // Wait until after the first message is gone (4000ms + 500ms buffer)
+            }
         }
 
-        // Update planet counter with separate counts for visited and colonized, showing totals
-        this.planetCountText.text = `Visited 🪂: ${orbitVisitedCount}/${totalPlanets}\nColonized 🏴‍☠️: ${colonizedCount}/${totalPlanets}`;
+        // Update planet counter
+        this.planetCountText.text = `Visited 🪂: ${visitedCount}/${totalPlanets}`;
     }
 
-    // Separate scoring method for planet visits and colonization
+    // Separate scoring method for planet visits
     addScoreForPlanetAction(planet, action) {
         // Don't add score for the starting planet
         if (planet === this.planets[CONSTANTS.STARTING_PLANET]) {
             return;
         }
 
-        // Add score based on action type
-        if (action === 'visit' && !planet.visitScoreAdded) {
-            this.score += 20;
-            planet.visitScoreAdded = true; // Mark that we've already awarded visit points
-            console.log(`Added 20 points for visiting ${planet.name}`);
+        // Add score based on the type of visit
+        if (!planet.visitScoreAdded) {
+            if (action === 'visitByOrbit') {
+                // Orbit visit scores 20 points
+                this.score += 20;
+                planet.visitScoreAdded = true; // Mark that we've already awarded visit points
+                console.log(`Added 20 points for visiting ${planet.name} by orbit`);
+
+                // Show message about orbit visit
+                this.showMessage(`+20 points: Orbit visit to ${planet.name}`, 2000);
+            }
+            else if (action === 'visitDirect') {
+                // Direct planet visit scores 50 points
+                this.score += 50;
+                planet.visitScoreAdded = true; // Mark that we've already awarded visit points
+                console.log(`Added 50 points for flying through ${planet.name}`);
+
+                // Show message about direct visit
+                this.showMessage(`+50 points: Direct visit to ${planet.name}`, 2000);
+            }
 
             // Update the score display
             this.updateScore();
             // No need to update planet counter here, it's handled in checkForColonization
         }
-        else if (action === 'colonize' && !planet.colonizeScoreAdded) {
-            this.score += 100;
-            planet.colonizeScoreAdded = true; // Mark that we've already awarded colonization points
-            console.log(`Added 100 points for colonizing ${planet.name}`);
+    }
+
+    // Method to award points for flying through a planet without marking it as visited
+    addScoreForDirectPass(planet) {
+        // Don't add score for the starting planet
+        if (planet === this.planets[CONSTANTS.STARTING_PLANET]) {
+            return;
+        }
+
+        // Award points for flying through a planet (without marking as visited)
+        this.score += 50;
+        console.log(`Added 50 points for flying through ${planet.name} (no visit)`);
+
+        // Show message about direct pass with hint about bonus opportunity
+        this.showMessage(`+50 points: Passed through ${planet.name}\n(Enter orbit within 5s for bonus!)`, 2500);
+
+        // Update the score display
+        this.updateScore();
+    }
+
+    // Method to show fuel refill message for already visited planets
+    showFuelRefillMessage(planet) {
+        // Don't show messages for the starting planet
+        if (planet === this.planets[CONSTANTS.STARTING_PLANET]) {
+            return;
+        }
+
+        console.log(`Refueled from ${planet.name} (already visited, no points)`);
+
+        // Show message about fuel refill without points
+        this.showMessage(`Refueled from ${planet.name}\n(No points - planet already visited)`, 1500);
+    }
+
+    // Method to add bonus score when entering orbit shortly after direct visit
+    addBonusScore(planet) {
+        if (typeof planet.markBonusAdded === 'function') {
+            // Add bonus score (50 additional points)
+            this.score += 50;
+            planet.markBonusAdded(); // Mark that we've already awarded bonus points
+            console.log(`Added 50 bonus points for entering orbit of ${planet.name} after direct visit!`);
+
+            // Show message about bonus
+            this.showMessage(`BONUS! +50 points for quick orbit\nafter passing through ${planet.name}!`, 3000);
+
+            // Visual celebration (optional) - add some particles or effects
+            this.createBonusEffect(planet);
+
+            // Play special sound effect if available
+            if (this.sounds && this.sounds.bonus) {
+                this.sounds.bonus.play();
+            } else if (this.sounds && this.sounds.colonize) {
+                // Fall back to colonize sound if bonus sound isn't available
+                this.sounds.colonize.play();
+            }
 
             // Update the score display
             this.updateScore();
-            // No need to update planet counter here, it's handled in checkForColonization
         }
+    }
+
+    // Create a visual effect for the bonus
+    createBonusEffect(planet) {
+        // Create a burst of particles around the planet
+        const particleCount = 20;
+        const particles = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = new PIXI.Graphics();
+            const angle = Math.random() * Math.PI * 2;
+            const distance = planet.radius * 1.5;
+            const size = 2 + Math.random() * 3;
+
+            // Position the particle around the planet
+            particle.x = planet.x + Math.cos(angle) * distance;
+            particle.y = planet.y + Math.sin(angle) * distance;
+
+            // Draw the particle
+            particle.beginFill(0xFFDD33);
+            particle.drawCircle(0, 0, size);
+            particle.endFill();
+
+            // Set random velocity
+            particle.vx = (Math.random() - 0.5) * 3;
+            particle.vy = (Math.random() - 0.5) * 3;
+
+            // Add to game container
+            this.gameContainer.addChild(particle);
+            particles.push(particle);
+        }
+
+        // Create ticker to animate particles
+        let ticker = 0;
+        const maxTicks = 60; // 1 second at 60fps
+
+        const animateParticles = () => {
+            ticker++;
+
+            // Move and fade particles
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha = 1 - (ticker / maxTicks);
+            });
+
+            // Remove particles when animation is done
+            if (ticker >= maxTicks) {
+                particles.forEach(p => {
+                    if (p.parent) p.parent.removeChild(p);
+                });
+                return false; // Stop the animation
+            }
+
+            return true; // Continue animation
+        };
+
+        // Add animation to the game's update loop
+        this.pendingAnimations = this.pendingAnimations || [];
+        this.pendingAnimations.push(animateParticles);
+    }
+
+    // Create a special celebration effect when all planets are visited
+    createCompletionCelebration() {
+        // Create particles that radiate from the center of the screen
+        const particleCount = 150; // More particles for a grander effect
+        const particles = [];
+        const colors = [0xFFFF33, 0x33FFFF, 0xFF33FF, 0x33FF33, 0xFF3333]; // Different colors for variety
+
+        // Create particles in multiple bursts from each planet
+        this.planets.forEach(planet => {
+            const planetParticles = Math.floor(particleCount / this.planets.length);
+
+            for (let i = 0; i < planetParticles; i++) {
+                const particle = new PIXI.Graphics();
+                const angle = Math.random() * Math.PI * 2;
+                const distance = planet.radius * 0.8; // Start closer to the planet
+                const size = 2 + Math.random() * 4; // Slightly larger particles
+                const colorIndex = Math.floor(Math.random() * colors.length);
+
+                // Position the particle near the planet
+                particle.x = planet.x + Math.cos(angle) * distance;
+                particle.y = planet.y + Math.sin(angle) * distance;
+
+                // Draw the particle with a random color
+                particle.beginFill(colors[colorIndex]);
+                particle.drawCircle(0, 0, size);
+                particle.endFill();
+
+                // Set random velocity bursting outward from the planet
+                const speed = 1 + Math.random() * 3; // Faster particles
+                particle.vx = Math.cos(angle) * speed;
+                particle.vy = Math.sin(angle) * speed;
+
+                // Add some rotation for extra effect
+                particle.rotation = 0;
+                particle.rotationSpeed = (Math.random() - 0.5) * 0.2;
+
+                // Add to game container
+                this.gameContainer.addChild(particle);
+                particles.push(particle);
+            }
+        });
+
+        // Create animation ticker
+        let ticker = 0;
+        const maxTicks = 120; // 2 seconds at 60fps - longer animation
+
+        const animateCelebration = () => {
+            ticker++;
+
+            // Move and animate particles
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rotation += p.rotationSpeed;
+
+                // Create a pulsing effect with the alpha
+                p.alpha = 1 - (ticker / maxTicks) + Math.sin(ticker * 0.1) * 0.2;
+
+                // Slow down particles over time
+                p.vx *= 0.99;
+                p.vy *= 0.99;
+            });
+
+            // Remove particles when animation is done
+            if (ticker >= maxTicks) {
+                particles.forEach(p => {
+                    if (p.parent) p.parent.removeChild(p);
+                });
+                return false; // Stop the animation
+            }
+
+            return true; // Continue animation
+        };
+
+        // Add animation to the game's update loop
+        this.pendingAnimations = this.pendingAnimations || [];
+        this.pendingAnimations.push(animateCelebration);
     }
 
     updateScore() {
@@ -721,6 +951,12 @@ class Game {
         this.highScore = getHighScore();
 
         let gameOverText = message + '\n\n';
+
+        // Add special bonus message for victory
+        if (isVictory && this.allPlanetsBonus) {
+            gameOverText += `COSMIC BONUS: +1000 POINTS!\n`;
+        }
+
         gameOverText += `SCORE: ${this.score}\n`;
         gameOverText += `HIGH SCORE: ${this.highScore}\n\n`;
 
@@ -801,6 +1037,9 @@ class Game {
         if (this.inputCooldown) return;
 
         if (this.spaceship && this.spaceship.orbiting && this.gameState === 'playing') {
+            // Store reference to the planet we're leaving
+            const leavingPlanet = this.spaceship.orbiting;
+
             const success = this.spaceship.exitOrbit();
 
             if (success) {

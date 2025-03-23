@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Core gameplay mechanics are in place and the game is playable with basic features.
+Core gameplay mechanics are in place and the game is playable with all essential features implemented.
 
 ### Implemented Features
 
@@ -14,15 +14,17 @@ Core gameplay mechanics are in place and the game is playable with basic feature
 - [x] Adaptive orbit entry/exit
 - [x] Click/tap to orbit planets
 - [x] Boost mechanic with fuel consumption
-- [x] Colonization of planets when visited
-- [x] Planet terraforming visual indication
+- [x] Planet visit tracking
+- [x] Visual indication for visited planets
 - [x] Fuel management system
 - [x] Game over when fuel is depleted
 - [x] Trajectory prediction line
 - [x] Hazards: meteors and black holes
 - [x] Satellite fuel pods (🛰️) for refueling
-- [x] Score tracking
-- [x] Visual indicators for visited/colonized planets (🪂/🏴‍☠️)
+- [x] Score tracking with bonus system
+- [x] Visual indicators for visited planets (🪂)
+- [x] Sun proximity danger and burning effect
+- [x] Strategic scoring: bonus for quick orbit after passing through a planet
 
 #### UI and Visuals
 - [x] Dynamic zoom levels
@@ -34,6 +36,8 @@ Core gameplay mechanics are in place and the game is playable with basic feature
 - [x] Visual distance indicator bands for orbit proximity
 - [x] Particle effects for ship thrust
 - [x] Planet glow/atmosphere effects
+- [x] Celebration particle effects for achievements
+- [x] Warning indicators for sun proximity
 
 #### Controls
 - [x] Desktop mouse & keyboard controls
@@ -44,14 +48,17 @@ Core gameplay mechanics are in place and the game is playable with basic feature
 - [x] Optimized rendering
 - [x] Mobile device support
 - [x] Responsive scaling for different screen sizes
+- [x] Animation system for visual effects
 
 #### Recent Enhancements
-- [x] Improved visual feedback for orbit entry/exit
-- [x] Enhanced particle effects
-- [x] Bug fixes for edge case orbital mechanics
-- [x] Performance optimizations for mobile
-- [x] Updated game instructions
-- [x] Replaced star emoji with satellite emoji (🛰️) for fuel pods
+- [x] Advanced scoring system with bonuses for skilled play
+- [x] Added 1000-point bonus for visiting all planets
+- [x] Added sun proximity danger and visual effects
+- [x] Implemented cooldown system for planet scoring to prevent exploits
+- [x] Added fuel refills when passing through planets
+- [x] Enhanced messaging system with sequential messaging
+- [x] Improved visual feedback for bonus achievements
+- [x] Added smooth transitions between orbit states
 
 ## Next Steps
 
@@ -61,6 +68,7 @@ Core gameplay mechanics are in place and the game is playable with basic feature
 - [ ] Visual fuel gauge improvement
 - [ ] Mission objectives panel
 - [ ] Mini-map for larger solar systems
+- [ ] Add visual indicators for scoring opportunities
 
 ### Gameplay Enhancements
 - [ ] Multiple solar systems/levels
@@ -68,26 +76,30 @@ Core gameplay mechanics are in place and the game is playable with basic feature
 - [ ] Wormholes for fast travel
 - [ ] Mission-based objectives
 - [ ] Achievement system
+- [ ] Additional challenges after all planets are visited
 
 ### Visual Upgrades
 - [ ] Enhanced planet textures and variety
 - [ ] Improved spaceship customization
 - [ ] Background nebula effects
 - [ ] Animation refinements
-- [ ] Day/night cycle on planets
+- [ ] Unique particle effects for different planets
 
 ### Sound & Music
 - [ ] Background music
 - [ ] Additional sound effects
 - [ ] Volume controls
+- [ ] Unique sound for 1000-point bonus achievement
 
 ### Technical Improvements
 - [ ] Further mobile optimization
 - [ ] Save game functionality
 - [ ] Analytics tracking
 - [ ] Browser compatibility testing
+- [ ] Improve physics simulation at high speeds
 
 ## Known Issues
 - Sometimes orbit exit trajectory can be unpredictable at high speeds
 - Occasional frame rate drops on lower-end mobile devices
-- Hazard spawn rates may need balancing 
+- Hazard spawn rates may need balancing
+- Fuel consumption balance may need adjustment 

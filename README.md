@@ -1,22 +1,27 @@
 # Escape Orbit
 
-A 2D web-based space game where you control a spaceship orbiting planets. The goal is to escape orbits by burning fuel at the right moment to reach and colonize all planets in the solar system, avoiding hazards like meteors and black holes.
+A 2D web-based space game where you control a spaceship orbiting planets. The goal is to visit all planets in the solar system by entering orbit around them, while managing your fuel and avoiding hazards like meteors, black holes, and getting too close to the sun.
 
 ## Game Rules & Objectives
 
-- **Main Goal**: Colonize all planets in the solar system
-- **Scoring**: Based on fuel efficiency, time taken, and planets colonized
-- **Failure Conditions**: Running out of fuel, colliding with a meteor, or being consumed by a black hole
-- **Visual Indicators**: Planets show 🪂 when visited by orbit and 🏴‍☠️ when colonized
+- **Main Goal**: Visit all planets in the solar system by entering orbit around them
+- **Scoring System**:
+  - 20 points for entering orbit around a planet
+  - 50 points for flying directly through a planet
+  - 50 BONUS points for entering orbit within 5 seconds after flying through a planet
+  - 1000 COSMIC ACHIEVEMENT points for visiting all planets
+- **Failure Conditions**: Running out of fuel, colliding with a meteor, being consumed by a black hole, or getting incinerated by the sun
+- **Visual Indicators**: Planets show 🪂 when visited by orbit
 
 ## Game Mechanics
 
 - **Orbit**: Your spaceship automatically orbits planets when close enough. Orbit radius adapts to your approach distance!
 - **Fuel Management**: Orbiting drains fuel slowly, boosting costs fuel
 - **Trajectory Prediction**: See your predicted flight path when leaving orbit
-- **Colonization**: Reach planets to colonize them and refuel
-- **Hazards**: Avoid meteors and black holes
+- **Planet Visits**: Fly through planets for points and fuel, or enter orbit for strategic advantages
+- **Hazards**: Avoid meteors, black holes, and the sun's intense radiation
 - **Fuel Pods**: Collect satellite fuel pods (🛰️) to replenish your fuel supply
+- **Bonus Scoring**: Get extra points with strategic maneuvers like direct visits followed by orbit
 
 ## Advanced Physics
 
@@ -24,6 +29,7 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 - **Gravity Fields**: Planets exert gravitational pull based on their size
 - **Momentum-Based Exits**: Exit boost power varies by planet size - smaller planets give bigger boosts!
 - **Orbital Mechanics**: Direction of orbit adapts to your approach angle
+- **Solar Radiation**: Getting too close to the sun will damage your ship and eventually destroy it
 
 ## Controls
 

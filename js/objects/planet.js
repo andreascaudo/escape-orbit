@@ -35,7 +35,6 @@ class Planet {
         this.visitTimerActive = false;
 
         // Score tracking
-        this.visitScoreAdded = false;
         this.bonusScoreAdded = false; // Track if bonus score was already added
 
         // Create graphics container for the planet
@@ -110,7 +109,7 @@ class Planet {
             try {
                 // Create a text object with parachute emoji
                 if (!this.parachuteEmoji) {
-                    this.parachuteEmoji = new PIXI.Text('🪂', {
+                    this.parachuteEmoji = new PIXI.Text('🏴‍☠️', {
                         fontFamily: 'Arial',
                         fontSize: this.radius * 0.5,
                         align: 'center'
@@ -412,12 +411,11 @@ class Planet {
         this.visited = false;
         this.orbitVisited = false;
         this.visitTimerActive = false;
-        this.visitScoreAdded = false; // Allow planet to give points again
+        this.visitTimer = 0;
+        this.bonusScoreAdded = false; // Allow planet to give bonus again
         this.recentlyDirectVisited = false;
         this.directVisitTime = 0;
-        this.bonusScoreAdded = false; // Reset bonus score flag
-        this.timerIndicator.clear();
-        this.needsUpdate = true;
+        this.drawPlanet(); // Update visual state to remove indicators
         console.log(`Visit timer expired for ${this.name}. Planet is no longer marked as visited.`);
     }
 
@@ -444,5 +442,11 @@ class Planet {
     // Mark that the bonus score has been added
     markBonusAdded() {
         this.bonusScoreAdded = true;
+    }
+
+    // Set the visited state of the planet
+    setVisited(value) {
+        this.visited = value;
+        this.drawPlanet(); // Update visual state
     }
 } 

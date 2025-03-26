@@ -37,6 +37,9 @@ class Controls {
             // Only activate for gameplay screen
             if (this.game.gameState !== 'playing') return;
 
+            // Skip if input cooldown is active
+            if (this.game.inputCooldown) return;
+
             const touch = e.touches[0];
             touchStartX = touch.clientX;
             touchStartY = touch.clientY;
@@ -45,7 +48,7 @@ class Controls {
 
             // Start touch timer to detect long press
             this.touchTimer = setTimeout(() => {
-                if (this.game.gameState === 'playing') {
+                if (this.game.gameState === 'playing' && !this.game.inputCooldown) {
                     touchLongPressActive = true;
                     this.game.startBoosting();
                 }
@@ -55,6 +58,9 @@ class Controls {
         document.addEventListener('touchend', (e) => {
             // Only activate for gameplay screen
             if (this.game.gameState !== 'playing') return;
+
+            // Skip if input cooldown is active
+            if (this.game.inputCooldown) return;
 
             // Clear the long press timer
             clearTimeout(this.touchTimer);
@@ -81,6 +87,9 @@ class Controls {
         document.addEventListener('touchmove', (e) => {
             // Only activate for gameplay screen
             if (this.game.gameState !== 'playing') return;
+
+            // Skip if input cooldown is active
+            if (this.game.inputCooldown) return;
 
             // Don't rotate if in orbit or if long press is active
             if (this.game.spaceship.orbiting || touchLongPressActive) {
@@ -131,6 +140,9 @@ class Controls {
 
         // Keydown event
         document.addEventListener('keydown', (e) => {
+            // Skip if input cooldown is active (except for ESC)
+            if (this.game.inputCooldown && e.code !== 'Escape') return;
+
             switch (e.code) {
                 case 'ArrowLeft':
                 case 'KeyA':
@@ -164,6 +176,9 @@ class Controls {
 
         // Keyup event
         document.addEventListener('keyup', (e) => {
+            // Skip if input cooldown is active (except for ESC)
+            if (this.game.inputCooldown && e.code !== 'Escape') return;
+
             switch (e.code) {
                 case 'ArrowLeft':
                 case 'KeyA':
@@ -202,6 +217,9 @@ class Controls {
         // Mouse down event for long press
         document.addEventListener('mousedown', (e) => {
             if (this.game.gameState === 'playing') {
+                // Skip if input cooldown is active
+                if (this.game.inputCooldown) return;
+
                 mouseIsDown = true;
                 mouseDownStart = Date.now();
                 mouseLongPressActive = false;
@@ -211,6 +229,9 @@ class Controls {
         // Mouse up event
         document.addEventListener('mouseup', (e) => {
             if (this.game.gameState === 'playing') {
+                // Skip if input cooldown is active
+                if (this.game.inputCooldown) return;
+
                 const pressDuration = Date.now() - mouseDownStart;
 
                 // If it was a short click, toggle orbit
@@ -234,6 +255,9 @@ class Controls {
 
         // Update game state based on keys and mouse
         this.keysInterval = setInterval(() => {
+            // Skip updates if input cooldown is active
+            if (this.game.inputCooldown) return;
+
             if (keys.left) {
                 this.game.rotateShip(-0.1);
             }

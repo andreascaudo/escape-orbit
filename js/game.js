@@ -1,5 +1,5 @@
 class Game {
-    constructor(app) {
+    constructor(app, username = 'Player') {
         this.app = app;
         this.stage = app.stage;
         this.width = app.screen.width;
@@ -8,6 +8,9 @@ class Game {
         this.gameState = 'title'; // title, playing, gameover
         this.score = 0;
         this.highScore = getHighScore();
+        this.username = username; // Store the player's username
+        this.maxPlanetsVisited = 0; // Track the maximum number of planets visited
+        this.inputCooldown = false; // Track if input is currently in cooldown
 
         // Detect if on mobile device
         this.isMobile = this.detectMobile();
@@ -46,6 +49,7 @@ class Game {
         this.orbitHelpText = null;
         this.orbitEntryText = null;
         this.sunWarningText = null;
+        this.usernameText = null; // Add username display
 
         // Sound effects
         this.sounds = {
@@ -115,8 +119,9 @@ class Game {
         this.scoreText.y = 50;
         this.uiContainer.addChild(this.scoreText);
 
-        // Create zoom display
-        this.zoomText = new PIXI.Text('ZOOM: 100%', {
+        // Create zoom display with correct initial value
+        const zoomPercentage = Math.round(this.zoom * 100);
+        this.zoomText = new PIXI.Text(`ZOOM: ${zoomPercentage}%`, {
             fontFamily: 'Arial',
             fontSize: 16,
             fill: 0xFFFFFF
@@ -134,6 +139,16 @@ class Game {
         this.planetCountText.x = 20;
         this.planetCountText.y = 110;
         this.uiContainer.addChild(this.planetCountText);
+
+        // Create username display
+        this.usernameText = new PIXI.Text(`PILOT: ${this.username}`, {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0xFFDD33
+        });
+        this.usernameText.x = 20;
+        this.usernameText.y = 140;
+        this.uiContainer.addChild(this.usernameText);
 
         // Create zoom instruction - only on desktop
         if (!this.isMobile) {
@@ -198,58 +213,194 @@ class Game {
         instructionsBg.beginFill(0x000000, 0.1);
         instructionsBg.drawRoundedRect(-this.width * 0.4, -this.height * 0.4, this.width * 0.8, this.height * 0.8, 20);
         instructionsBg.endFill();
-        instructionsBg.x = this.width / 2;
-        instructionsBg.y = this.height / 2;
-        this.uiContainer.addChild(instructionsBg);
 
-        // Show title and instructions
-        this.messageText.text = 'ESCAPE ORBIT\n\n' +
-            'CONTROLS:\n' +
-            '• SPACE/MOUSE: Hold for boost, tap to enter/exit orbit\n' +
-            '• +/- KEYS: Zoom in/out\n\n' +
-            'GAMEPLAY:\n' +
-            '• 🪂 Visit planets by entering orbit\n' +
-            '• 🏴‍☠️ Colonize planets by moving close to their surface\n' +
-            '• Collect fuel pods (🛰️) and avoid hazards (☄️)\n' +
-            '• Win by colonizing all planets\n\n' +
-            'Tap/Click to Start';
+        // Add leaderboard display to title screen
+        const leaderboardTitle = new PIXI.Text('LEADERBOARD', {
+            fontFamily: 'Arial',
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: 0xFFDD33,
+            align: 'center'
+        });
+        leaderboardTitle.anchor.set(0.5, 0);
+        leaderboardTitle.x = 0;
+        leaderboardTitle.y = 50;
 
-        // Make the message text interactive and visible
-        this.messageText.eventMode = 'static';
-        this.messageText.cursor = 'pointer';
+        // Create leaderboard container
+        const leaderboardContainer = new PIXI.Container();
+        leaderboardContainer.x = 0;
+        leaderboardContainer.y = 80;
 
-        // Add a background rectangle to make the clickable area more visible
-        const clickArea = new PIXI.Graphics();
-        clickArea.beginFill(0x000000, 0.01); // Almost transparent
-        clickArea.drawRect(-this.width / 2, -this.height / 2, this.width, this.height);
-        clickArea.endFill();
-        clickArea.x = this.width / 2;
-        clickArea.y = this.height / 2;
-        clickArea.eventMode = 'static';
-        this.uiContainer.addChild(clickArea);
+        // Get top 5 entries from leaderboard
+        const leaderboard = getLeaderboard();
+        const topEntries = leaderboard.slice(0, 5);
 
-        console.log('Setting up click events');
+        if (topEntries.length === 0) {
+            const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: 0xCCCCCC,
+                align: 'center'
+            });
+            noScoresText.anchor.set(0.5, 0);
+            noScoresText.x = 0;
+            noScoresText.y = 0;
+            leaderboardContainer.addChild(noScoresText);
+        } else {
+            // Display top entries
+            topEntries.forEach((entry, index) => {
+                const scoreRow = new PIXI.Text(
+                    `${index + 1}. ${entry.username} - ${entry.score} pts (${entry.planetsVisited} planets)`,
+                    {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
+                        align: 'left'
+                    }
+                );
+                scoreRow.anchor.set(0.5, 0);
+                scoreRow.x = 0;
+                scoreRow.y = index * 25;
+                leaderboardContainer.addChild(scoreRow);
+            });
+        }
 
-        // Listen for click/tap on message text (only for title screen)
-        this.messageText.on('pointerdown', () => {
-            console.log('Message text clicked');
-            if (this.gameState === 'title') {
-                this.startGame();
+        // Add title screen elements to the message container
+        const titleContainer = new PIXI.Container();
+        titleContainer.addChild(instructionsBg);
+
+        // Game title
+        const titleText = new PIXI.Text('ESCAPE ORBIT', {
+            fontFamily: 'Arial',
+            fontSize: 48,
+            fontWeight: 'bold',
+            fill: 0xFFFFFF,
+            align: 'center',
+            dropShadow: true,
+            dropShadowColor: 0x000000,
+            dropShadowDistance: 3
+        });
+        titleText.anchor.set(0.5, 0);
+        titleText.x = 0;
+        titleText.y = -this.height * 0.35;
+        titleContainer.addChild(titleText);
+
+        // Add player username
+        const welcomeText = new PIXI.Text(`Welcome, ${this.username}!`, {
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fill: 0xFFDD33,
+            align: 'center'
+        });
+        welcomeText.anchor.set(0.5, 0);
+        welcomeText.x = 0;
+        welcomeText.y = -this.height * 0.25;
+        titleContainer.addChild(welcomeText);
+
+        // Add instructions text
+        const instructionsText = new PIXI.Text('INSTRUCTIONS:', {
+            fontFamily: 'Arial',
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: 0xFFFFFF,
+            align: 'center'
+        });
+        instructionsText.anchor.set(0.5, 0);
+        instructionsText.x = 0;
+        instructionsText.y = -120;
+        titleContainer.addChild(instructionsText);
+
+        // Add control instructions based on device
+        let controlsText;
+        if (this.isMobile) {
+            controlsText = new PIXI.Text(
+                '• TAP to enter/exit orbit around planets\n• HOLD to boost your spaceship\n• Visit all planets to win!',
+                {
+                    fontFamily: 'Arial',
+                    fontSize: 18,
+                    fill: 0xCCCCFF,
+                    align: 'center'
+                }
+            );
+        } else {
+            controlsText = new PIXI.Text(
+                '• CLICK or SPACE to enter/exit orbit\n• HOLD CLICK or SPACE to boost\n• +/- keys to zoom in/out, 0 to reset\n• Visit all planets to win!',
+                {
+                    fontFamily: 'Arial',
+                    fontSize: 18,
+                    fill: 0xCCCCFF,
+                    align: 'center'
+                }
+            );
+        }
+        controlsText.anchor.set(0.5, 0);
+        controlsText.x = 0;
+        controlsText.y = -80;
+        titleContainer.addChild(controlsText);
+
+        // Add scoring information
+        const scoringText = new PIXI.Text(
+            'SCORING:\n• 20 pts - Enter orbit\n• 50 pts - Fly through planet\n• 50 BONUS - Enter orbit after flythrough\n• 1000 pts - COSMIC ACHIEVEMENT (visit all planets)',
+            {
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: 0xFFFFFF,
+                align: 'center'
             }
+        );
+        scoringText.anchor.set(0.5, 0);
+        scoringText.x = 0;
+        scoringText.y = -10;
+        titleContainer.addChild(scoringText);
+
+        // Add leaderboard elements
+        titleContainer.addChild(leaderboardTitle);
+        titleContainer.addChild(leaderboardContainer);
+
+        // Add start button
+        const startButton = new PIXI.Graphics();
+        startButton.beginFill(0x3355FF, 0.7);
+        startButton.lineStyle(2, 0x6688FF);
+        startButton.drawRoundedRect(-100, 0, 200, 50, 10);
+        startButton.endFill();
+        startButton.y = this.height * 0.25;
+        startButton.interactive = true;
+        startButton.buttonMode = true;
+        startButton.eventMode = 'static';
+        startButton.cursor = 'pointer';
+
+        const startText = new PIXI.Text('START GAME', {
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fontWeight: 'bold',
+            fill: 0xFFFFFF,
+            align: 'center'
+        });
+        startText.anchor.set(0.5, 0.5);
+        startText.x = 0;
+        startText.y = startButton.y + 25;
+
+        titleContainer.addChild(startButton);
+        titleContainer.addChild(startText);
+
+        // Position the title container
+        titleContainer.x = this.width / 2;
+        titleContainer.y = this.height / 2;
+
+        // Add the title container to the UI container
+        this.uiContainer.addChild(titleContainer);
+
+        // Store reference to the title container for later removal
+        this.titleContainer = titleContainer;
+
+        // Set up click/tap handlers
+        startButton.on('pointerdown', () => {
+            this.startGame();
         });
 
-        // Listen for click/tap on background (only for title screen)
-        clickArea.on('pointerdown', () => {
-            console.log('Click area clicked');
-            if (this.gameState === 'title') {
-                this.startGame();
-            }
-        });
-
-        // Make the entire stage clickable as fallback
+        // Also allow clicking anywhere to start
         this.stage.eventMode = 'static';
         this.stage.on('pointerdown', () => {
-            console.log('Stage clicked');
             if (this.gameState === 'title') {
                 this.startGame();
             }
@@ -258,63 +409,62 @@ class Game {
 
     startGame() {
         console.log('Starting game');
-        this.gameState = 'playing';
-        this.score = 0;
+        // If title container exists, remove it
+        if (this.titleContainer) {
+            this.uiContainer.removeChild(this.titleContainer);
+            this.titleContainer = null;
+        }
+
+        // Clear message text from previous game
         this.messageText.text = '';
-        this.zoom = this.isMobile ? 0.3 : 0.6; // Use 30% zoom on mobile, 60% on desktop
 
-        // Reset bonus flags
+        // Cancel any queued messages from previous game
+        this.messageQueue = [];
+
+        // Clear out any previous game objects
+        this.clearGameObjects();
+
+        // Reset zoom to default value based on device type
+        if (this.isMobile) {
+            const isLandscape = window.innerWidth > window.innerHeight;
+            this.zoom = isLandscape ? 0.4 : 0.3;
+        } else {
+            this.zoom = 0.6;
+        }
+
+        // Set up the solar system
+        this.createPlanets();
+        this.createSpaceship();
+        this.createHazards();
+        this.createFuelBoosts();
+
+        // Draw boundary circle
+        this.drawBoundary();
+
+        // Reset game variables
+        this.score = 0;
+        this.maxPlanetsVisited = 0;
         this.allPlanetsBonus = false;
+        this.burnWarningShown = false;
+        this.updateScore();
 
-        // Remove any UI elements from the title screen
-        this.uiContainer.children.forEach(child => {
-            if (child !== this.fuelText &&
-                child !== this.scoreText &&
-                child !== this.zoomText &&
-                child !== this.planetCountText &&
-                child !== this.messageText &&
-                child !== this.orbitHelpText &&
-                child !== this.orbitEntryText &&
-                !(this.isMobile ? false : child.text && child.text.includes('Press + to zoom'))) {
-                this.uiContainer.removeChild(child);
-            }
-        });
+        // Initialize planet counter
+        this.updatePlanetCounter();
 
-        // Add a short cooldown period to prevent input actions right after starting the game
+        // Make sure zoom is applied and displayed correctly
+        this.applyZoom();
+
+        // Set game state to playing
+        this.gameState = 'playing';
+
+        // Add a cooldown period to prevent immediate input actions
         this.inputCooldown = true;
         setTimeout(() => {
             this.inputCooldown = false;
-        }, 500); // 500ms cooldown
+        }, 1000); // 1 second cooldown
 
-        // Clear any existing game objects
-        this.clearGameObjects();
-
-        // Create planets
-        this.createPlanets();
-        console.log('Planets created:', this.planets.length);
-
-        // Draw system boundary
-        this.drawBoundary();
-
-        // Create spaceship
-        this.createSpaceship();
-        console.log('Spaceship created');
-
-        // Create initial hazards
-        this.createHazards();
-        console.log('Hazards created:', this.hazards.length);
-
-        // Create fuel boosts
-        this.createFuelBoosts(); // Add initial fuel boosts
-
-        // Calculate total planets excluding starting planet
-        const totalPlanets = this.planets.length;
-
-        // Initialize planet counters (will be updated in checkForColonization)
-        this.planetCountText.text = `Visited 🪂: 1/${totalPlanets}`;
-
-        // Apply initial zoom
-        this.applyZoom();
+        // Show game start message
+        this.showMessage('Mission commencing!\nVisit all planets to complete your mission', 3000);
     }
 
     createPlanets() {
@@ -707,56 +857,52 @@ class Game {
         this.planetCountText.text = `Visited 🪂: ${visitedCount}/${totalPlanets}`;
     }
 
-    // Separate scoring method for planet visits
+    // Add score for various planet actions (orbit or colonize)
     addScoreForPlanetAction(planet, action) {
-        // Don't add score for the starting planet
-        if (planet === this.planets[CONSTANTS.STARTING_PLANET]) {
+        // Skip if the message queue is currently active
+        if (this.messageQueue && this.messageQueue.length > 0) {
             return;
         }
 
-        // Add score based on the type of visit
-        if (!planet.visitScoreAdded) {
-            if (action === 'visitByOrbit') {
-                // Orbit visit scores 20 points
-                this.score += 20;
-                planet.visitScoreAdded = true; // Mark that we've already awarded visit points
-                console.log(`Added 20 points for visiting ${planet.name} by orbit`);
-
-                // Show message about orbit visit
-                this.showMessage(`+20 points: Orbit visit to ${planet.name}`, 2000);
-            }
-            else if (action === 'visitDirect') {
-                // Direct planet visit scores 50 points
-                this.score += 50;
-                planet.visitScoreAdded = true; // Mark that we've already awarded visit points
-                console.log(`Added 50 points for flying through ${planet.name}`);
-
-                // Show message about direct visit
-                this.showMessage(`+50 points: Direct visit to ${planet.name}`, 2000);
-            }
-
-            // Update the score display
+        if (!planet.visited && action === 'orbit') {
+            // First time visiting this planet via orbit
+            planet.setVisited(true);
+            this.score += 20;
             this.updateScore();
-            // No need to update planet counter here, it's handled in checkForColonization
+            this.showMessage(`${planet.name} visited! +20 points`, 1500);
+
+            // Update the planet counter
+            this.updatePlanetCounter();
+        }
+        else if (action === 'colonize') {
+            // Direct colonization (flying through planet)
+            this.addScoreForDirectPass(planet);
         }
     }
 
     // Method to award points for flying through a planet without marking it as visited
     addScoreForDirectPass(planet) {
-        // Don't add score for the starting planet
-        if (planet === this.planets[CONSTANTS.STARTING_PLANET]) {
+        // Skip if the message queue is currently active
+        if (this.messageQueue && this.messageQueue.length > 0) {
             return;
         }
 
-        // Award points for flying through a planet (without marking as visited)
-        this.score += 50;
-        console.log(`Added 50 points for flying through ${planet.name} (no visit)`);
+        // First time direct pass through a planet
+        if (!planet.visited) {
+            planet.setVisited(true);
+            this.score += 50;
+            this.updateScore();
+            this.showMessage(`Direct pass through ${planet.name}! +50 points`, 1500);
 
-        // Show message about direct pass with hint about bonus opportunity
-        this.showMessage(`+50 points: Passed through ${planet.name}\n(Enter orbit within 5s for bonus!)`, 2500);
+            // Mark for potential bonus if player enters orbit soon
+            planet.markForDirectPassBonus();
 
-        // Update the score display
-        this.updateScore();
+            // Update the planet counter
+            this.updatePlanetCounter();
+        }
+        // Refuel even if already visited
+        this.spaceship.refuel(CONSTANTS.PLANET_REFUEL_AMOUNT);
+        this.showFuelRefillMessage(planet);
     }
 
     // Method to show fuel refill message for already visited planets
@@ -950,6 +1096,9 @@ class Game {
         const newHighScore = saveHighScore(this.score);
         this.highScore = getHighScore();
 
+        // Save the score to the leaderboard with username and planets visited
+        const rank = saveLeaderboardEntry(this.username, this.score, this.maxPlanetsVisited);
+
         let gameOverText = message + '\n\n';
 
         // Add special bonus message for victory
@@ -958,7 +1107,13 @@ class Game {
         }
 
         gameOverText += `SCORE: ${this.score}\n`;
-        gameOverText += `HIGH SCORE: ${this.highScore}\n\n`;
+        gameOverText += `HIGH SCORE: ${this.highScore}\n`;
+        gameOverText += `PLANETS VISITED: ${this.maxPlanetsVisited}/${CONSTANTS.PLANETS.length}\n\n`;
+
+        // Add leaderboard rank message if in top 10
+        if (rank > 0) {
+            gameOverText += `LEADERBOARD RANK: #${rank}\n\n`;
+        }
 
         if (newHighScore) {
             gameOverText += 'NEW HIGH SCORE!\n\n';
@@ -966,7 +1121,9 @@ class Game {
 
         gameOverText += 'Click/Tap or Press ESC to Play Again';
 
+        // Use messageText for game over display
         this.messageText.text = gameOverText;
+        this.messageText.alpha = 1; // Ensure message is fully visible
 
         // Play sound effect
         if (isVictory) {
@@ -985,6 +1142,9 @@ class Game {
         this.stage.eventMode = 'static';
         this.stage.off('pointerdown');
 
+        // Add leaderboard to game over screen
+        this.displayLeaderboardAfterGameOver();
+
         // Make message text interactive
         this.messageText.eventMode = 'static';
         this.messageText.cursor = 'pointer';
@@ -1001,6 +1161,56 @@ class Game {
                 this.startGame();
             }
         });
+    }
+
+    // Display leaderboard after game over
+    displayLeaderboardAfterGameOver() {
+        // Create leaderboard container
+        const leaderboardContainer = new PIXI.Container();
+        leaderboardContainer.x = this.width / 2;
+        leaderboardContainer.y = this.height / 2 + 150;
+        this.uiContainer.addChild(leaderboardContainer);
+
+        // Create leaderboard title
+        const leaderboardTitle = new PIXI.Text('TOP PILOTS', {
+            fontFamily: 'Arial',
+            fontSize: 18,
+            fontWeight: 'bold',
+            fill: 0xFFDD33,
+            align: 'center'
+        });
+        leaderboardTitle.anchor.set(0.5, 0);
+        leaderboardTitle.x = 0;
+        leaderboardTitle.y = 0;
+        leaderboardContainer.addChild(leaderboardTitle);
+
+        // Get leaderboard data
+        const leaderboard = getLeaderboard();
+        const topEntries = leaderboard.slice(0, 3); // Show top 3 entries
+
+        if (topEntries.length > 0) {
+            // Display entries
+            topEntries.forEach((entry, index) => {
+                const color = entry.username === this.username ? 0xFFFF33 : 0xCCCCFF;
+
+                const scoreRow = new PIXI.Text(
+                    `${index + 1}. ${entry.username} - ${entry.score} pts`,
+                    {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: color,
+                        align: 'center'
+                    }
+                );
+                scoreRow.anchor.set(0.5, 0);
+                scoreRow.x = 0;
+                scoreRow.y = 30 + index * 25;
+                leaderboardContainer.addChild(scoreRow);
+            });
+        }
+
+        // Store reference for cleanup
+        this.gameOverLeaderboard = leaderboardContainer;
     }
 
     // Control methods called by Controls class
@@ -1283,6 +1493,22 @@ class Game {
         this.hazards = [];
         this.fuelBoosts = [];
         this.spaceship = null;
+
+        // Remove game over leaderboard if exists
+        if (this.gameOverLeaderboard && this.gameOverLeaderboard.parent) {
+            this.gameOverLeaderboard.parent.removeChild(this.gameOverLeaderboard);
+            this.gameOverLeaderboard = null;
+        }
+
+        // Hide sun warning text if it exists
+        if (this.sunWarningText) {
+            this.sunWarningText.visible = false;
+        }
+
+        // Stop any sound effects that might be playing
+        if (this.sounds && this.sounds.burning) {
+            this.sounds.burning.stop();
+        }
     }
 
     // Detect if the user is on a mobile device
@@ -1335,5 +1561,35 @@ class Game {
             }
         });
         ticker.start();
+    }
+
+    // Update the planet counter - now also updates maxPlanetsVisited
+    updatePlanetCounter() {
+        // Count visited planets
+        const visitedCount = this.planets.filter(planet => planet.visited).length;
+
+        // Update maximum planets visited if current count is higher
+        if (visitedCount > this.maxPlanetsVisited) {
+            this.maxPlanetsVisited = visitedCount;
+        }
+
+        const totalPlanets = CONSTANTS.PLANETS.length;
+        this.planetCountText.text = `Visited 🪂: ${visitedCount}/${totalPlanets}`;
+
+        // Check if all planets have been visited
+        if (visitedCount === totalPlanets && !this.allPlanetsBonus) {
+            this.allPlanetsBonus = true;
+            this.score += 1000;
+            this.updateScore();
+            this.showMessage("COSMIC ACHIEVEMENT! +1000 POINTS!", 3000);
+
+            // Add a celebration effect
+            this.createCompletionCelebration();
+
+            // End the game in victory
+            setTimeout(() => {
+                this.gameOver("MISSION ACCOMPLISHED! All planets visited!", true);
+            }, 5000);
+        }
     }
 } 

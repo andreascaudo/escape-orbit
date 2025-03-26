@@ -22,6 +22,8 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 - **Hazards**: Avoid meteors, black holes, and the sun's intense radiation
 - **Fuel Pods**: Collect satellite fuel pods (🛰️) to replenish your fuel supply
 - **Bonus Scoring**: Get extra points with strategic maneuvers like direct visits followed by orbit
+- **Leaderboard**: Compete for high scores with other players, tracking your score and planets visited
+- **Custom Username**: Enter your pilot callsign before starting the game
 
 ## Advanced Physics
 
@@ -49,7 +51,7 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 - **JavaScript**: Core language for game logic and interactions
 - **PixiJS**: Lightweight 2D rendering engine
 - **Howler.js**: Audio library for sound effects
-- **LocalStorage**: For saving high scores locally
+- **LocalStorage**: For saving high scores and leaderboard data
 
 ## Setup
 
@@ -74,6 +76,8 @@ This project uses a simple structure with all assets loaded from CDNs for minima
 - `js/main.js`: Initializes the game and handles setup
 - `js/game.js`: Core game logic and state management
 - `js/controls.js`: Handles player input (keyboard and touch)
+- `js/leaderboard.js`: Manages the leaderboard functionality
+- `js/username-screen.js`: Handles the username input screen
 - `js/objects/`: Contains game object classes (planet, spaceship, hazard)
 - `PROGRESS.md`: Documents current development status and next steps
 

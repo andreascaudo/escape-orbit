@@ -38,12 +38,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add the canvas to the DOM
     document.getElementById('game-container').appendChild(app.view);
 
-    // Create and initialize game
-    const game = new Game(app);
-    console.log('Game initialized');
+    // Game state variables
+    let game = null;
+    let usernameScreen = null;
+    let currentUsername = getUsername(); // Get existing username if available
 
-    // Make game instance globally accessible for scoring and other interactions
-    window.game = game;
+    // First show the username screen, then create the game when it's done
+    usernameScreen = new UsernameScreen(app, (username) => {
+        // Store the username for game use
+        currentUsername = username;
+
+        // Create and initialize game
+        game = new Game(app, username);
+        console.log('Game initialized with username:', username);
+
+        // Make game instance globally accessible for scoring and other interactions
+        window.game = game;
+    });
 
     // Handle orientation change
     window.addEventListener('orientationchange', handleOrientationChange);
@@ -71,35 +82,38 @@ document.addEventListener('DOMContentLoaded', () => {
         CONSTANTS.SCREEN_WIDTH = newWidth;
         CONSTANTS.SCREEN_HEIGHT = newHeight;
 
-        // Update UI positions
-        if (game.fuelText) {
-            game.fuelText.x = 20;
-            game.fuelText.y = 20;
-        }
+        // Update UI positions if game exists
+        if (game) {
+            // Update UI positions
+            if (game.fuelText) {
+                game.fuelText.x = 20;
+                game.fuelText.y = 20;
+            }
 
-        if (game.scoreText) {
-            game.scoreText.x = 20;
-            game.scoreText.y = 50;
-        }
+            if (game.scoreText) {
+                game.scoreText.x = 20;
+                game.scoreText.y = 50;
+            }
 
-        if (game.zoomText) {
-            game.zoomText.x = 20;
-            game.zoomText.y = 80;
-        }
+            if (game.zoomText) {
+                game.zoomText.x = 20;
+                game.zoomText.y = 80;
+            }
 
-        if (game.messageText) {
-            game.messageText.x = newWidth / 2;
-            game.messageText.y = newHeight / 2;
-        }
+            if (game.messageText) {
+                game.messageText.x = newWidth / 2;
+                game.messageText.y = newHeight / 2;
+            }
 
-        if (game.orbitHelpText) {
-            game.orbitHelpText.x = newWidth / 2;
-            game.orbitHelpText.y = newHeight - 40;
-        }
+            if (game.orbitHelpText) {
+                game.orbitHelpText.x = newWidth / 2;
+                game.orbitHelpText.y = newHeight - 40;
+            }
 
-        if (game.planetCountText) {
-            game.planetCountText.x = 20;
-            game.planetCountText.y = 110;
+            if (game.planetCountText) {
+                game.planetCountText.x = 20;
+                game.planetCountText.y = 110;
+            }
         }
 
         // Reposition joystick and boost button for landscape

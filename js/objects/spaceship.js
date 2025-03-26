@@ -547,13 +547,13 @@ class Spaceship {
         // Check if this planet was already visited by orbit
         const wasOrbitVisited = planet.orbitVisited;
 
-        // Use the orbit-specific visit method
-        planet.visitByOrbit();
-
         // Add score for visit if this is first time (if game reference is available)
         if (!wasOrbitVisited && window.game) {
-            window.game.addScoreForPlanetAction(planet, 'visitByOrbit');
+            window.game.addScoreForPlanetAction(planet, 'orbit');
         }
+
+        // Use the orbit-specific visit method - call this AFTER the score attribution
+        planet.visitByOrbit();
 
         // Check for bonus multiplier if planet is eligible
         // We now check recentlyDirectVisited instead of visited flag 

@@ -1,10 +1,40 @@
-// Game Controls Handler
+// controls.js
+
 class Controls {
     constructor(game) {
         this.game = game;
-        this.joystick = null;
-        this.boostButtonActive = false;
         this.touchDevice = this.isTouchDevice();
+
+        // Touch state variables
+        this.touchStartTime = 0;
+        this.touchLongPressActive = false; // Tracks if the long press threshold was met for the current touch
+        this.touchTimer = null;          // Stores timer reference for long press detection
+        this.isBoosting = false;         // Tracks if boosting is currently active
+
+        // Keyboard/Mouse state variables (for desktop)
+        this.keys = { left: false, right: false, up: false, space: false };
+        this.spacebarPressStart = 0;
+        this.spacebarLongPressActive = false;
+        this.mouseDownStart = 0;
+        this.mouseLongPressActive = false;
+        this.mouseIsDown = false;
+        this.keysInterval = null;        // Stores timer reference for keyboard polling
+
+        // --- Store bound event handlers ---
+        // Touch
+        this._boundHandleTouchStart = this._handleTouchStart.bind(this);
+        this._boundHandleTouchMove = this._handleTouchMove.bind(this);
+        this._boundHandleTouchEnd = this._handleTouchEnd.bind(this);
+        // Keyboard
+        this._boundHandleKeyDown = this._handleKeyDown.bind(this);
+        this._boundHandleKeyUp = this._handleKeyUp.bind(this);
+        // Mouse
+        this._boundHandleMouseDown = this._handleMouseDown.bind(this);
+        this._boundHandleMouseUp = this._handleMouseUp.bind(this);
+        // Keyboard Interval Tick
+        this._boundHandleKeysIntervalTick = this._handleKeysIntervalTick.bind(this);
+
+        this.longPressThreshold = 300; // milliseconds
 
         this.setupControls();
     }
@@ -21,279 +51,251 @@ class Controls {
         }
     }
 
-    setupTouchControls() {
-        // No joystick or boost button on mobile anymore, just use simple touch controls
-        console.log('Setting up simplified touch controls for mobile');
+    // --- Touch Handlers ---
 
-        // Variables for touch long press
-        let touchStartTime = 0;
-        let touchLongPressActive = false;
-        const longPressThreshold = 300; // milliseconds to consider a long press
-        let touchStartX = 0;
-        let touchStartY = 0;
+    _handleTouchStart(e) {
+        if (this.game.gameState !== 'playing' || this.game.inputCooldown) return;
+        // Consider preventing default if scroll/zoom becomes an issue:
+        // e.preventDefault();
 
-        // Handle touch on the screen (for all touches now)
-        document.addEventListener('touchstart', (e) => {
-            // Only activate for gameplay screen
-            if (this.game.gameState !== 'playing') return;
+        const touch = e.touches[0];
+        this.touchStartTime = Date.now();
+        this.touchLongPressActive = false;
+        this.isBoosting = false;
 
-            // Skip if input cooldown is active
-            if (this.game.inputCooldown) return;
+        clearTimeout(this.touchTimer); // Clear previous timer
 
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-            touchStartTime = Date.now();
-            touchLongPressActive = false;
+        this.touchTimer = setTimeout(() => {
+            if (this.game.gameState === 'playing' && !this.game.inputCooldown) {
+                console.log('Long press detected - Starting boost');
+                this.touchLongPressActive = true;
+                this.isBoosting = true;
+                this.game.startBoosting();
+            }
+        }, this.longPressThreshold);
+    }
 
-            // Start touch timer to detect long press
-            this.touchTimer = setTimeout(() => {
-                if (this.game.gameState === 'playing' && !this.game.inputCooldown) {
-                    touchLongPressActive = true;
-                    this.game.startBoosting();
-                }
-            }, longPressThreshold);
-        });
+    _handleTouchMove(e) {
+        if (this.game.gameState !== 'playing' || this.game.inputCooldown) return;
 
-        document.addEventListener('touchend', (e) => {
-            // Only activate for gameplay screen
-            if (this.game.gameState !== 'playing') return;
+        // If boosting, ignore movement for rotation/cancelling boost
+        if (this.isBoosting) {
+            // Prevent default browser actions if boosting and moving (optional)
+            // e.preventDefault();
+            return;
+        }
 
-            // Skip if input cooldown is active
-            if (this.game.inputCooldown) return;
-
-            // Clear the long press timer
+        // If NOT boosting yet, cancel the boost timer if finger moves.
+        // Optional: Add a small pixel threshold here if needed.
+        if (!this.touchLongPressActive) {
+            // console.log('Touch moved before long press timer - cancelling boost timer.');
             clearTimeout(this.touchTimer);
+        }
 
-            const touchDuration = Date.now() - touchStartTime;
-
-            // If it was a short tap, toggle orbit
-            if (touchDuration < longPressThreshold) {
-                if (this.game.spaceship.orbiting) {
-                    this.game.exitOrbit();
-                } else {
-                    this.game.tryEnterOrbit();
-                }
-            }
-
-            // Always stop boosting on touch end if it was active
-            if (touchLongPressActive) {
-                this.game.stopBoosting();
-                touchLongPressActive = false;
-            }
-        });
-
-        // For ship rotation on touch move
-        document.addEventListener('touchmove', (e) => {
-            // Only activate for gameplay screen
-            if (this.game.gameState !== 'playing') return;
-
-            // Skip if input cooldown is active
-            if (this.game.inputCooldown) return;
-
-            // Don't rotate if in orbit or if long press is active
-            if (this.game.spaceship.orbiting || touchLongPressActive) {
-                // Clear the long press timer if touch moves significantly
-                clearTimeout(this.touchTimer);
-
-                // Stop boosting if it was active
-                if (touchLongPressActive) {
-                    this.game.stopBoosting();
-                    touchLongPressActive = false;
-                }
-                return;
-            }
-
-            // Get current touch position
+        // Rotation Logic (Only if not orbiting and not boosting)
+        if (!this.game.spaceship.orbiting) {
             const touch = e.touches[0];
             const currentX = touch.clientX;
             const currentY = touch.clientY;
-
-            // Calculate angle from center of the screen to touch point for rotation
             const centerX = window.innerWidth / 2;
             const centerY = window.innerHeight / 2;
             const angle = Math.atan2(currentY - centerY, currentX - centerX);
-
-            // Set ship rotation
             this.game.setShipRotation(angle + Math.PI / 2); // Adjust by 90 degrees
-        });
+            // Prevent default browser actions if rotating (optional)
+            // e.preventDefault();
+        }
     }
 
-    setupKeyboardControls() {
-        // Keyboard controls mapping
-        const keys = {
-            left: false,
-            right: false,
-            up: false,
-            space: false
-        };
+    _handleTouchEnd(e) {
+        // Check gameState but maybe not inputCooldown, as we need to stop boost regardless
+        if (this.game.gameState !== 'playing') return;
 
-        // Variables for space bar long press
-        let spacebarPressStart = 0;
-        let spacebarLongPressActive = false;
-        const longPressThreshold = 300; // milliseconds to consider a long press
+        console.log('Touch end detected');
+        clearTimeout(this.touchTimer); // Clear pending timer
 
-        // Variables for mouse click long press
-        let mouseDownStart = 0;
-        let mouseLongPressActive = false;
-        let mouseIsDown = false;
+        const touchDuration = Date.now() - this.touchStartTime;
 
-        // Keydown event
-        document.addEventListener('keydown', (e) => {
-            // Skip if input cooldown is active (except for ESC)
-            if (this.game.inputCooldown && e.code !== 'Escape') return;
-
-            switch (e.code) {
-                case 'ArrowLeft':
-                case 'KeyA':
-                    keys.left = true;
-                    break;
-                case 'ArrowRight':
-                case 'KeyD':
-                    keys.right = true;
-                    break;
-                case 'ArrowUp':
-                case 'KeyW':
-                    keys.up = true;
-                    // No longer used for boost
-                    break;
-                case 'Space':
-                    if (!keys.space) {
-                        // Only set the start time when the key is first pressed
-                        spacebarPressStart = Date.now();
-                    }
-                    keys.space = true;
-                    // Toggle orbit state handled in keyup event for quick press
-                    break;
-                case 'Escape':
-                    // Restart game when ESC is pressed
-                    if (this.game.gameState === 'playing' || this.game.gameState === 'gameover') {
-                        this.game.startGame();
-                    }
-                    break;
+        // Stop Boosting if it was active
+        if (this.isBoosting) {
+            console.log('Stopping boost on touch end');
+            this.game.stopBoosting();
+            this.isBoosting = false;
+        }
+        // Orbit Toggle on Short Tap (only if boost wasn't activated)
+        else if (touchDuration < this.longPressThreshold && !this.touchLongPressActive) {
+            console.log('Short tap detected - Toggling orbit');
+            if (this.game.spaceship.orbiting) {
+                this.game.exitOrbit();
+            } else {
+                this.game.tryEnterOrbit();
             }
-        });
+        }
 
-        // Keyup event
-        document.addEventListener('keyup', (e) => {
-            // Skip if input cooldown is active (except for ESC)
-            if (this.game.inputCooldown && e.code !== 'Escape') return;
+        // Reset flags
+        this.touchLongPressActive = false;
+        // isBoosting should be false here already
+    }
 
-            switch (e.code) {
-                case 'ArrowLeft':
-                case 'KeyA':
-                    keys.left = false;
-                    break;
-                case 'ArrowRight':
-                case 'KeyD':
-                    keys.right = false;
-                    break;
-                case 'ArrowUp':
-                case 'KeyW':
-                    keys.up = false;
-                    break;
-                case 'Space':
-                    keys.space = false;
-                    const pressDuration = Date.now() - spacebarPressStart;
+    setupTouchControls() {
+        console.log('Setting up improved touch controls for mobile');
+        // Use passive: false if preventDefault() is needed inside the handlers
+        const eventOptions = { passive: false };
+        document.addEventListener('touchstart', this._boundHandleTouchStart, eventOptions);
+        document.addEventListener('touchmove', this._boundHandleTouchMove, eventOptions);
+        document.addEventListener('touchend', this._boundHandleTouchEnd); // touchend often doesn't need options
+    }
 
-                    // If it was a short press, toggle orbit
-                    if (pressDuration < longPressThreshold) {
-                        if (this.game.spaceship.orbiting) {
-                            this.game.exitOrbit();
-                        } else {
-                            this.game.tryEnterOrbit();
-                        }
-                    }
 
-                    // Always stop boosting when spacebar is released
-                    if (spacebarLongPressActive) {
-                        this.game.stopBoosting();
-                        spacebarLongPressActive = false;
-                    }
-                    break;
-            }
-        });
+    // --- Keyboard/Mouse Handlers ---
 
-        // Mouse down event for long press
-        document.addEventListener('mousedown', (e) => {
-            if (this.game.gameState === 'playing') {
-                // Skip if input cooldown is active
-                if (this.game.inputCooldown) return;
+    _handleKeyDown(e) {
+        if (this.game.inputCooldown && e.code !== 'Escape') return;
 
-                mouseIsDown = true;
-                mouseDownStart = Date.now();
-                mouseLongPressActive = false;
-            }
-        });
+        switch (e.code) {
+            case 'ArrowLeft': case 'KeyA':
+                this.keys.left = true; break;
+            case 'ArrowRight': case 'KeyD':
+                this.keys.right = true; break;
+            case 'ArrowUp': case 'KeyW':
+                this.keys.up = true; break; // Still track 'up' if needed elsewhere
+            case 'Space':
+                if (!this.keys.space) {
+                    this.spacebarPressStart = Date.now();
+                    this.spacebarLongPressActive = false; // Reset on new press
+                }
+                this.keys.space = true;
+                break;
+            case 'Escape':
+                if (this.game.gameState === 'playing' || this.game.gameState === 'gameover') {
+                    this.game.startGame();
+                }
+                break;
+        }
+    }
 
-        // Mouse up event
-        document.addEventListener('mouseup', (e) => {
-            if (this.game.gameState === 'playing') {
-                // Skip if input cooldown is active
-                if (this.game.inputCooldown) return;
+    _handleKeyUp(e) {
+        if (this.game.inputCooldown && e.code !== 'Escape') return;
 
-                const pressDuration = Date.now() - mouseDownStart;
+        switch (e.code) {
+            case 'ArrowLeft': case 'KeyA':
+                this.keys.left = false; break;
+            case 'ArrowRight': case 'KeyD':
+                this.keys.right = false; break;
+            case 'ArrowUp': case 'KeyW':
+                this.keys.up = false; break;
+            case 'Space':
+                this.keys.space = false;
+                const pressDuration = Date.now() - this.spacebarPressStart;
 
-                // If it was a short click, toggle orbit
-                if (mouseIsDown && pressDuration < longPressThreshold) {
+                // If boosting via space, stop it
+                if (this.spacebarLongPressActive) {
+                    this.game.stopBoosting();
+                    this.spacebarLongPressActive = false;
+                }
+                // Otherwise, if it was a short press, toggle orbit
+                else if (pressDuration < this.longPressThreshold) {
                     if (this.game.spaceship.orbiting) {
                         this.game.exitOrbit();
                     } else {
                         this.game.tryEnterOrbit();
                     }
                 }
+                break;
+        }
+    }
 
-                // Always stop boosting when mouse is released
-                if (mouseLongPressActive) {
-                    this.game.stopBoosting();
-                    mouseLongPressActive = false;
-                }
+    _handleMouseDown(e) {
+        if (this.game.gameState !== 'playing' || this.game.inputCooldown) return;
+        // Add check for e.button === 0 for left click only if needed
 
-                mouseIsDown = false;
-            }
-        });
+        this.mouseIsDown = true;
+        this.mouseDownStart = Date.now();
+        this.mouseLongPressActive = false; // Reset on new press
+    }
 
-        // Update game state based on keys and mouse
-        this.keysInterval = setInterval(() => {
-            // Skip updates if input cooldown is active
-            if (this.game.inputCooldown) return;
+    _handleMouseUp(e) {
+        if (this.game.gameState !== 'playing' /*|| this.game.inputCooldown*/) return; // Allow stopping boost even if cooldown started?
+        // Add check for e.button === 0 for left click only if needed
 
-            if (keys.left) {
-                this.game.rotateShip(-0.1);
-            }
-            if (keys.right) {
-                this.game.rotateShip(0.1);
-            }
-
-            // Check for spacebar long press
-            if (keys.space && !spacebarLongPressActive) {
-                const pressDuration = Date.now() - spacebarPressStart;
-                if (pressDuration >= longPressThreshold) {
-                    // Start boosting after long press threshold
-                    this.game.startBoosting();
-                    spacebarLongPressActive = true;
-                }
-            }
-
-            // Check for mouse long press
-            if (mouseIsDown && !mouseLongPressActive && this.game.gameState === 'playing') {
-                const pressDuration = Date.now() - mouseDownStart;
-                if (pressDuration >= longPressThreshold) {
-                    // Start boosting after long press threshold
-                    this.game.startBoosting();
-                    mouseLongPressActive = true;
+        // If boosting via mouse, stop it
+        if (this.mouseLongPressActive) {
+            this.game.stopBoosting();
+            this.mouseLongPressActive = false;
+        }
+        // Otherwise, if it was a short click, toggle orbit
+        else if (this.mouseIsDown /*&& (Date.now() - this.mouseDownStart < this.longPressThreshold)*/) {
+            // Check duration on mouseup as well to confirm short click
+            const pressDuration = Date.now() - this.mouseDownStart;
+            if (pressDuration < this.longPressThreshold) {
+                if (this.game.spaceship.orbiting) {
+                    this.game.exitOrbit();
+                } else {
+                    this.game.tryEnterOrbit();
                 }
             }
-        }, 16);
+        }
+
+        this.mouseIsDown = false; // Reset flag last
+    }
+
+    // Handles continuous actions based on key state for keyboard/mouse
+    _handleKeysIntervalTick() {
+        if (this.game.gameState !== 'playing' || this.game.inputCooldown) return;
+
+        // Rotation
+        if (this.keys.left) { this.game.rotateShip(-0.1); }
+        if (this.keys.right) { this.game.rotateShip(0.1); }
+
+        // Boosting Check (Spacebar)
+        if (this.keys.space && !this.spacebarLongPressActive) {
+            if (Date.now() - this.spacebarPressStart >= this.longPressThreshold) {
+                this.game.startBoosting();
+                this.spacebarLongPressActive = true;
+            }
+        }
+
+        // Boosting Check (Mouse)
+        if (this.mouseIsDown && !this.mouseLongPressActive) {
+            if (Date.now() - this.mouseDownStart >= this.longPressThreshold) {
+                this.game.startBoosting();
+                this.mouseLongPressActive = true;
+            }
+        }
+    }
+
+    setupKeyboardControls() {
+        console.log('Setting up keyboard/mouse controls');
+        document.addEventListener('keydown', this._boundHandleKeyDown);
+        document.addEventListener('keyup', this._boundHandleKeyUp);
+        document.addEventListener('mousedown', this._boundHandleMouseDown);
+        document.addEventListener('mouseup', this._boundHandleMouseUp);
+
+        // Start polling interval
+        this.keysInterval = setInterval(this._boundHandleKeysIntervalTick, 16); // Approx 60fps
     }
 
     destroy() {
-        // Clean up any intervals/timers
-        if (this.keysInterval) {
-            clearInterval(this.keysInterval);
-        }
+        console.log('Destroying Controls and removing listeners...');
 
-        // Clear any remaining touch timers
+        // Clear timers
+        clearInterval(this.keysInterval);
         clearTimeout(this.touchTimer);
+        this.keysInterval = null;
+        this.touchTimer = null;
+
+        // Remove touch listeners
+        document.removeEventListener('touchstart', this._boundHandleTouchStart);
+        document.removeEventListener('touchmove', this._boundHandleTouchMove);
+        document.removeEventListener('touchend', this._boundHandleTouchEnd);
+
+        // Remove keyboard listeners
+        document.removeEventListener('keydown', this._boundHandleKeyDown);
+        document.removeEventListener('keyup', this._boundHandleKeyUp);
+
+        // Remove mouse listeners
+        document.removeEventListener('mousedown', this._boundHandleMouseDown);
+        document.removeEventListener('mouseup', this._boundHandleMouseUp);
+
+        console.log('Controls destroyed.');
     }
-} 
+}

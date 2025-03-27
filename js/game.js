@@ -205,7 +205,6 @@ class Game {
     }
 
     showTitleScreen() {
-        console.log('Showing title screen');
         this.gameState = 'title';
 
         // Create a background for the instructions
@@ -231,39 +230,17 @@ class Game {
         leaderboardContainer.x = 0;
         leaderboardContainer.y = 80;
 
-        // Get top 5 entries from leaderboard
-        const leaderboard = getLeaderboard();
-        const topEntries = leaderboard.slice(0, 5);
-
-        if (topEntries.length === 0) {
-            const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fill: 0xCCCCCC,
-                align: 'center'
-            });
-            noScoresText.anchor.set(0.5, 0);
-            noScoresText.x = 0;
-            noScoresText.y = 0;
-            leaderboardContainer.addChild(noScoresText);
-        } else {
-            // Display top entries
-            topEntries.forEach((entry, index) => {
-                const scoreRow = new PIXI.Text(
-                    `${index + 1}. ${entry.username} - ${entry.score} pts (${entry.planetsVisited} planets)`,
-                    {
-                        fontFamily: 'Arial',
-                        fontSize: 16,
-                        fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
-                        align: 'left'
-                    }
-                );
-                scoreRow.anchor.set(0.5, 0);
-                scoreRow.x = 0;
-                scoreRow.y = index * 25;
-                leaderboardContainer.addChild(scoreRow);
-            });
-        }
+        // Create loading indicator for leaderboard
+        const loadingText = new PIXI.Text('Loading leaderboard...', {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0xCCCCCC,
+            align: 'center'
+        });
+        loadingText.anchor.set(0.5, 0);
+        loadingText.x = 0;
+        loadingText.y = 0;
+        leaderboardContainer.addChild(loadingText);
 
         // Add title screen elements to the message container
         const titleContainer = new PIXI.Container();
@@ -357,6 +334,57 @@ class Game {
         titleContainer.addChild(leaderboardTitle);
         titleContainer.addChild(leaderboardContainer);
 
+        // Position the title container
+        titleContainer.x = this.width / 2;
+        titleContainer.y = this.height / 2;
+
+        // Add the title container to the UI container
+        this.uiContainer.addChild(titleContainer);
+
+        // Store reference to the title container for later removal
+        this.titleContainer = titleContainer;
+
+        // Fetch and populate the leaderboard
+        getLeaderboard().then(leaderboard => {
+            // Remove loading text
+            leaderboardContainer.removeChild(loadingText);
+
+            const topEntries = leaderboard.slice(0, 5);
+
+            if (topEntries.length === 0) {
+                const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
+                    fontFamily: 'Arial',
+                    fontSize: 16,
+                    fill: 0xCCCCCC,
+                    align: 'center'
+                });
+                noScoresText.anchor.set(0.5, 0);
+                noScoresText.x = 0;
+                noScoresText.y = 0;
+                leaderboardContainer.addChild(noScoresText);
+            } else {
+                // Display top entries
+                topEntries.forEach((entry, index) => {
+                    const scoreRow = new PIXI.Text(
+                        `${index + 1}. ${entry.username} - ${entry.score} pts (${entry.planetsVisited} planets)`,
+                        {
+                            fontFamily: 'Arial',
+                            fontSize: 16,
+                            fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
+                            align: 'left'
+                        }
+                    );
+                    scoreRow.anchor.set(0.5, 0);
+                    scoreRow.x = 0;
+                    scoreRow.y = index * 25;
+                    leaderboardContainer.addChild(scoreRow);
+                });
+            }
+        }).catch(error => {
+            console.error('Error loading leaderboard:', error);
+            loadingText.text = 'Error loading leaderboard';
+        });
+
         // Add start button
         const startButton = new PIXI.Graphics();
         startButton.beginFill(0x3355FF, 0.7);
@@ -382,16 +410,6 @@ class Game {
 
         titleContainer.addChild(startButton);
         titleContainer.addChild(startText);
-
-        // Position the title container
-        titleContainer.x = this.width / 2;
-        titleContainer.y = this.height / 2;
-
-        // Add the title container to the UI container
-        this.uiContainer.addChild(titleContainer);
-
-        // Store reference to the title container for later removal
-        this.titleContainer = titleContainer;
 
         // Set up click/tap handlers
         startButton.on('pointerdown', () => {
@@ -839,6 +857,7 @@ class Game {
             if (!this.allPlanetsBonus) {
                 this.allPlanetsBonus = true;
                 this.score += 1000;
+                this.updateScore();
                 this.showMessage(`COSMIC ACHIEVEMENT: +1000 POINTS\nFor visiting all planets!`, 4000);
                 console.log(`Added 1000 points bonus for visiting all planets!`);
                 this.updateScore();
@@ -1092,13 +1111,7 @@ class Game {
     gameOver(message, isVictory = false) {
         this.gameState = 'gameover';
 
-        // Check for high score
-        const newHighScore = saveHighScore(this.score);
-        this.highScore = getHighScore();
-
-        // Save the score to the leaderboard with username and planets visited
-        const rank = saveLeaderboardEntry(this.username, this.score, this.maxPlanetsVisited);
-
+        // Prepare the game over text without leaderboard rank initially
         let gameOverText = message + '\n\n';
 
         // Add special bonus message for victory
@@ -1107,18 +1120,18 @@ class Game {
         }
 
         gameOverText += `SCORE: ${this.score}\n`;
+
+        // Check for high score
+        const newHighScore = saveHighScore(this.score);
+        this.highScore = getHighScore();
         gameOverText += `HIGH SCORE: ${this.highScore}\n`;
         gameOverText += `PLANETS VISITED: ${this.maxPlanetsVisited}/${CONSTANTS.PLANETS.length}\n\n`;
-
-        // Add leaderboard rank message if in top 10
-        if (rank > 0) {
-            gameOverText += `LEADERBOARD RANK: #${rank}\n\n`;
-        }
 
         if (newHighScore) {
             gameOverText += 'NEW HIGH SCORE!\n\n';
         }
 
+        gameOverText += 'Saving to leaderboard...\n';
         gameOverText += 'Click/Tap or Press ESC to Play Again';
 
         // Use messageText for game over display
@@ -1131,6 +1144,42 @@ class Game {
         } else {
             this.sounds.explosion.play();
         }
+
+        // Save the score to the leaderboard with username and planets visited
+        saveLeaderboardEntry(this.username, this.score, this.maxPlanetsVisited)
+            .then(rank => {
+                // Update the game over text with the leaderboard rank
+                let updatedText = this.messageText.text.replace('Saving to leaderboard...\n', 'Score saved to leaderboard!\n');
+
+                // Add leaderboard rank message based on rank
+                const clickTapIndex = updatedText.indexOf('Click/Tap');
+                if (clickTapIndex !== -1) {
+                    // If rank is 0, it means the score was saved but not in top 10
+                    const rankMessage = rank > 0
+                        ? `LEADERBOARD RANK: #${rank}\n\n`
+                        : `Score not in top 10 yet\n\n`;
+
+                    updatedText = updatedText.slice(0, clickTapIndex) +
+                        rankMessage +
+                        updatedText.slice(clickTapIndex);
+                }
+
+                this.messageText.text = updatedText;
+
+                // Add leaderboard to game over screen
+                this.displayLeaderboardAfterGameOver();
+            })
+            .catch(error => {
+                console.error('Error saving to leaderboard:', error);
+                // Update text to show error
+                this.messageText.text = this.messageText.text.replace(
+                    'Saving to leaderboard...\n',
+                    'Error saving to leaderboard\n'
+                );
+
+                // Still show leaderboard
+                this.displayLeaderboardAfterGameOver();
+            });
 
         // Add click/tap listener to restart the game
         this.setupGameOverClickListener();
@@ -1184,33 +1233,65 @@ class Game {
         leaderboardTitle.y = 0;
         leaderboardContainer.addChild(leaderboardTitle);
 
-        // Get leaderboard data
-        const leaderboard = getLeaderboard();
-        const topEntries = leaderboard.slice(0, 3); // Show top 3 entries
-
-        if (topEntries.length > 0) {
-            // Display entries
-            topEntries.forEach((entry, index) => {
-                const color = entry.username === this.username ? 0xFFFF33 : 0xCCCCFF;
-
-                const scoreRow = new PIXI.Text(
-                    `${index + 1}. ${entry.username} - ${entry.score} pts`,
-                    {
-                        fontFamily: 'Arial',
-                        fontSize: 16,
-                        fill: color,
-                        align: 'center'
-                    }
-                );
-                scoreRow.anchor.set(0.5, 0);
-                scoreRow.x = 0;
-                scoreRow.y = 30 + index * 25;
-                leaderboardContainer.addChild(scoreRow);
-            });
-        }
+        // Create loading text
+        const loadingText = new PIXI.Text('Loading leaderboard...', {
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: 0xCCCCCC,
+            align: 'center'
+        });
+        loadingText.anchor.set(0.5, 0);
+        loadingText.x = 0;
+        loadingText.y = 50;
+        leaderboardContainer.addChild(loadingText);
 
         // Store reference for cleanup
         this.gameOverLeaderboard = leaderboardContainer;
+
+        // Get leaderboard data asynchronously
+        getLeaderboard()
+            .then(leaderboard => {
+                // Remove loading text
+                leaderboardContainer.removeChild(loadingText);
+
+                const topEntries = leaderboard.slice(0, 3); // Show top 3 entries
+
+                if (topEntries.length > 0) {
+                    // Display entries
+                    topEntries.forEach((entry, index) => {
+                        const color = entry.username === this.username ? 0xFFFF33 : 0xCCCCFF;
+
+                        const scoreRow = new PIXI.Text(
+                            `${index + 1}. ${entry.username} - ${entry.score} pts`,
+                            {
+                                fontFamily: 'Arial',
+                                fontSize: 16,
+                                fill: color,
+                                align: 'center'
+                            }
+                        );
+                        scoreRow.anchor.set(0.5, 0);
+                        scoreRow.x = 0;
+                        scoreRow.y = 30 + index * 25;
+                        leaderboardContainer.addChild(scoreRow);
+                    });
+                } else {
+                    const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: 0xCCCCCC,
+                        align: 'center'
+                    });
+                    noScoresText.anchor.set(0.5, 0);
+                    noScoresText.x = 0;
+                    noScoresText.y = 50;
+                    leaderboardContainer.addChild(noScoresText);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading leaderboard:', error);
+                loadingText.text = 'Error loading leaderboard';
+            });
     }
 
     // Control methods called by Controls class

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Orbit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #eee;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            color: #3cf;
+        }
+
+        button {
+            background-color: #3cf;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #5df;
+        }
+
+        pre {
+            background-color: #222;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .panel {
+            background-color: #222;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        input,
+        select {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: #eee;
+        }
+
+        .success {
+            color: #5f5;
+        }
+
+        .error {
+            color: #f55;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Escape Orbit - API Debugging</h1>
+
+    <div class="panel">
+        <h2>Environment Information</h2>
+        <div>
+            <p>Current hostname: <span id="hostname"></span></p>
+            <p>API URL: <span id="api-url"></span></p>
+            <p>Expected API format:
+                <code>https://[api-id].execute-api.[region].amazonaws.com/prod/api/leaderboard</code>
+            </p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Test API Connection</h2>
+        <button id="check-api">Check API Status</button>
+        <pre id="api-status">Click "Check API Status" to test connection...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>Get Leaderboard Data</h2>
+        <button id="get-leaderboard">Get Leaderboard</button>
+        <pre id="leaderboard-result">Results will appear here...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>Submit Test Score</h2>
+        <div>
+            <input type="text" id="username" placeholder="Username" value="TestPilot">
+            <input type="number" id="score" placeholder="Score" value="350">
+            <input type="number" id="planets" placeholder="Planets Visited" value="4">
+        </div>
+        <button id="submit-score">Submit Score</button>
+        <pre id="submit-result">Results will appear here...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>LocalStorage Data</h2>
+        <button id="show-local">Show LocalStorage</button>
+        <button id="clear-local">Clear LocalStorage</button>
+        <pre id="local-data">Click "Show LocalStorage" to view data...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>Simulate Game Score Submission</h2>
+        <button id="simulate-game">Simulate Game Over</button>
+        <pre id="game-result">Results will appear here...</pre>
+    </div>
+
+    <div class="panel">
+        <h2>Export Debug Log</h2>
+        <button id="export-log">Export Debug Log</button>
+    </div>
+
+    <script>
+        // Include leaderboard.js functions
+        const script = document.createElement('script');
+        script.src = 'js/leaderboard.js';
+        document.head.appendChild(script);
+
+        // Wait for script to load
+        script.onload = function () {
+            console.log('Leaderboard script loaded');
+            init();
+        };
+
+        // Store log messages
+        const debugLog = [];
+
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logEntry = {
+                timestamp,
+                type,
+                message
+            };
+
+            debugLog.push(logEntry);
+            console.log(`[${timestamp}] [${type}]`, message);
+        }
+
+        function init() {
+            // Display environment info
+            document.getElementById('hostname').textContent = window.location.hostname;
+
+            // Try to get API URL from leaderboard.js
+            const apiUrl = typeof API_URL !== 'undefined' ? API_URL : 'Not found';
+            document.getElementById('api-url').textContent = apiUrl;
+
+            // Check API button
+            document.getElementById('check-api').addEventListener('click', async () => {
+                const statusElement = document.getElementById('api-status');
+                statusElement.textContent = 'Checking API connection...';
+
+                try {
+                    logMessage('Checking API health endpoint');
+                    // Try the root endpoint first
+                    const rootUrl = apiUrl.replace('/api/leaderboard', '');
+                    const response = await fetch(rootUrl);
+
+                    statusElement.innerHTML = `API Status: ${response.status} ${response.statusText}\n`;
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        statusElement.innerHTML += `Response: ${JSON.stringify(data, null, 2)}`;
+                        logMessage('API health check successful', 'success');
+                    } else {
+                        statusElement.innerHTML += `Error: ${await response.text()}`;
+                        logMessage('API health check failed', 'error');
+                    }
+                } catch (error) {
+                    statusElement.innerHTML = `Connection Error: ${error.message}`;
+                    logMessage(`API connection error: ${error.message}`, 'error');
+
+                    // Try with CORS proxy as fallback
+                    try {
+                        logMessage('Trying with CORS proxy');
+                        statusElement.innerHTML += '\n\nTrying with CORS proxy...';
+                        const proxyUrl = `https://cors-anywhere.herokuapp.com/${apiUrl}`;
+                        const corsResponse = await fetch(proxyUrl);
+                        statusElement.innerHTML += `\nProxy Status: ${corsResponse.status} ${corsResponse.statusText}`;
+                        logMessage('CORS proxy attempt result: ' + corsResponse.status, corsResponse.ok ? 'success' : 'error');
+                    } catch (proxyError) {
+                        statusElement.innerHTML += `\nProxy Error: ${proxyError.message}`;
+                        logMessage(`CORS proxy error: ${proxyError.message}`, 'error');
+                    }
+                }
+            });
+
+            // Get leaderboard button
+            document.getElementById('get-leaderboard').addEventListener('click', async () => {
+                const resultElement = document.getElementById('leaderboard-result');
+                resultElement.textContent = 'Fetching leaderboard...';
+
+                try {
+                    logMessage('Getting leaderboard data');
+                    const leaderboard = await getLeaderboard();
+                    resultElement.innerHTML = `Leaderboard Entries: ${leaderboard.length}\n\n${JSON.stringify(leaderboard, null, 2)}`;
+                    logMessage(`Retrieved ${leaderboard.length} leaderboard entries`, 'success');
+                } catch (error) {
+                    resultElement.innerHTML = `Error: ${error.message}`;
+                    logMessage(`Error getting leaderboard: ${error.message}`, 'error');
+                }
+            });
+
+            // Submit score button
+            document.getElementById('submit-score').addEventListener('click', async () => {
+                const resultElement = document.getElementById('submit-result');
+                resultElement.textContent = 'Submitting score...';
+
+                const username = document.getElementById('username').value || 'TestPilot';
+                const score = parseInt(document.getElementById('score').value) || 100;
+                const planets = parseInt(document.getElementById('planets').value) || 1;
+
+                try {
+                    logMessage(`Submitting score: ${username}, ${score}, ${planets}`);
+                    const result = await saveLeaderboardEntry(username, score, planets);
+                    resultElement.innerHTML = `Score Submitted!\nRank: ${result}\n`;
+                    logMessage(`Score submitted successfully, rank: ${result}`, 'success');
+
+                    // Get updated leaderboard
+                    try {
+                        leaderboardCache = null; // Force refresh
+                        const leaderboard = await getLeaderboard();
+                        resultElement.innerHTML += `\nUpdated Leaderboard:\n${JSON.stringify(leaderboard.slice(0, 3), null, 2)}`;
+                    } catch (leaderboardError) {
+                        resultElement.innerHTML += `\nError getting updated leaderboard: ${leaderboardError.message}`;
+                    }
+                } catch (error) {
+                    resultElement.innerHTML = `Error: ${error.message}`;
+                    logMessage(`Error submitting score: ${error.message}`, 'error');
+                }
+            });
+
+            // Show localStorage button
+            document.getElementById('show-local').addEventListener('click', () => {
+                const dataElement = document.getElementById('local-data');
+
+                logMessage('Checking localStorage data');
+                const username = localStorage.getItem('escapeOrbitUsername');
+                const leaderboard = localStorage.getItem('escapeOrbitLeaderboard');
+
+                let output = '';
+                if (username) {
+                    output += `Username: ${username}\n\n`;
+                }
+
+                if (leaderboard) {
+                    try {
+                        const entries = JSON.parse(leaderboard);
+                        output += `Leaderboard Entries: ${entries.length}\n${JSON.stringify(entries, null, 2)}`;
+                    } catch (e) {
+                        output += `Error parsing leaderboard: ${e.message}\nRaw value: ${leaderboard}`;
+                    }
+                } else {
+                    output += 'No leaderboard data in localStorage';
+                }
+
+                dataElement.textContent = output;
+            });
+
+            // Clear localStorage button
+            document.getElementById('clear-local').addEventListener('click', () => {
+                const dataElement = document.getElementById('local-data');
+
+                logMessage('Clearing localStorage data');
+                localStorage.removeItem('escapeOrbitUsername');
+                localStorage.removeItem('escapeOrbitLeaderboard');
+                clearLeaderboard(); // Call the function from leaderboard.js
+
+                dataElement.textContent = 'LocalStorage cleared!';
+            });
+
+            // Simulate game over
+            document.getElementById('simulate-game').addEventListener('click', async () => {
+                const resultElement = document.getElementById('game-result');
+                resultElement.textContent = 'Simulating game score submission...';
+
+                const username = document.getElementById('username').value || 'TestPilot';
+                const score = parseInt(document.getElementById('score').value) || 100;
+                const planets = parseInt(document.getElementById('planets').value) || 1;
+
+                try {
+                    logMessage('Simulating direct API call');
+
+                    // This is the direct API call as it would be made from the game
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username,
+                            score,
+                            planetsVisited: planets
+                        })
+                    });
+
+                    resultElement.innerHTML = `API Response Status: ${response.status} ${response.statusText}\n`;
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        resultElement.innerHTML += `Response: ${JSON.stringify(data, null, 2)}`;
+                        logMessage('Game simulation successful', 'success');
+                    } else {
+                        resultElement.innerHTML += `Error: ${await response.text()}`;
+                        logMessage('Game simulation failed', 'error');
+                    }
+                } catch (error) {
+                    resultElement.innerHTML = `Connection Error: ${error.message}`;
+                    logMessage(`Game simulation error: ${error.message}`, 'error');
+                }
+            });
+
+            // Export log button
+            document.getElementById('export-log').addEventListener('click', () => {
+                const logString = debugLog.map(entry =>
+                    `[${entry.timestamp}] [${entry.type}] ${JSON.stringify(entry.message)}`
+                ).join('\n');
+
+                const blob = new Blob([logString], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `escape-orbit-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.log`;
+                a.click();
+
+                URL.revokeObjectURL(url);
+            });
+        }
+    </script>
+</body>
+
+</html>

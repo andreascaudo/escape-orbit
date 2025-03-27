@@ -1,0 +1,19 @@
+{
+    "name": "escape-orbit-backend",
+    "version": "1.0.0",
+    "description": "Backend for Escape Orbit game",
+    "main": "lambda.js",
+    "scripts": {
+        "start": "serverless offline",
+        "deploy": "serverless deploy"
+    },
+    "dependencies": {
+        "aws-sdk": "^2.1545.0",
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "serverless-http": "^3.1.1"
+    },
+    "devDependencies": {
+        "serverless-offline": "^14.4.0"
+    }
+}

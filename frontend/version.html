@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Orbit - Version Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #eee;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #3cf;
+        }
+
+        .info {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        pre {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #3cf;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .version {
+            font-weight: bold;
+            color: #ff0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Escape Orbit - Version Checker</h1>
+
+    <div class="info">
+        <h2>Current Version: <span class="version">2025-03-27.1</span></h2>
+        <p>This page helps confirm you're seeing the latest version of the game files.</p>
+        <p>If you're still experiencing issues after seeing this version, try a hard refresh (Ctrl+F5 or Cmd+Shift+R).
+        </p>
+    </div>
+
+    <div class="info">
+        <h2>Content Check</h2>
+        <div id="check-result">Checking...</div>
+    </div>
+
+    <div class="info">
+        <h2>Actions</h2>
+        <a href="/" class="button">Return to Game</a>
+        <a href="#" class="button" id="clear-storage">Clear Local Storage</a>
+        <a href="debug-api.html" class="button">API Debug Page</a>
+    </div>
+
+    <div class="info">
+        <h2>Cache Control Headers</h2>
+        <div id="headers">Loading...</div>
+    </div>
+
+    <script>
+        // Function to safely check for patterns in file content
+        async function checkFileContents(url, pattern, description) {
+            try {
+                const response = await fetch(url + '?t=' + Date.now());
+                if (!response.ok) {
+                    return `${description}: <span style="color: #f55;">ERROR ${response.status}</span>`;
+                }
+
+                const text = await response.text();
+                const containsPattern = text.includes(pattern);
+
+                return `${description}: <span style="${containsPattern ? 'color: #5f5;' : 'color: #f55;'}">${containsPattern ? 'UPDATED ✓' : 'OLD VERSION ✗'}</span>`;
+            } catch (error) {
+                return `${description}: <span style="color: #f55;">ERROR: ${error.message}</span>`;
+            }
+        }
+
+        // Check JS file contents
+        async function runChecks() {
+            const checkResult = document.getElementById('check-result');
+
+            // Check the updated files
+            const leaderboardCheck = await checkFileContents('js/leaderboard.js', 'rank=0 as a valid response', 'leaderboard.js');
+            const gameCheck = await checkFileContents('js/game.js', 'Score not in top 10 yet', 'game.js');
+
+            checkResult.innerHTML = `
+                <p>${leaderboardCheck}</p>
+                <p>${gameCheck}</p>
+            `;
+        }
+
+        // Run the checks
+        runChecks();
+
+        // Add clear storage functionality
+        document.getElementById('clear-storage').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('escapeOrbitUsername');
+            localStorage.removeItem('escapeOrbitLeaderboard');
+            localStorage.removeItem('escapeOrbitHighScore');
+            alert('Local storage cleared! You may now return to the game.');
+        });
+
+        // Check headers
+        async function checkHeaders() {
+            const headersDiv = document.getElementById('headers');
+
+            try {
+                const response = await fetch('js/leaderboard.js', { method: 'HEAD' });
+                const headers = [...response.headers.entries()].map(([key, value]) => `${key}: ${value}`).join('\n');
+                headersDiv.innerHTML = `<pre>${headers}</pre>`;
+            } catch (error) {
+                headersDiv.innerHTML = `<p style="color: #f55;">Error checking headers: ${error.message}</p>`;
+            }
+        }
+
+        checkHeaders();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escape Orbit</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #joystick-zone {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            z-index: 100;
+        }
+
+        #boost-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 50, 50, 0.5);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            z-index: 100;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Leaderboard styles */
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 5px;
+            text-align: left;
+        }
+
+        .leaderboard-table th {
+            background-color: rgba(51, 85, 255, 0.5);
+            color: white;
+        }
+
+        .leaderboard-table tr:nth-child(even) {
+            background-color: rgba(0, 0, 51, 0.5);
+        }
+
+        .leaderboard-table tr:nth-child(odd) {
+            background-color: rgba(0, 0, 34, 0.5);
+        }
+
+        /* Portrait orientation message for mobile devices */
+        #orientation-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000022;
+            color: white;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+
+        #orientation-message img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+
+        /* Only show orientation message on mobile in portrait mode */
+        @media screen and (max-width: 812px) and (orientation: portrait) {
+            #orientation-message {
+                display: flex;
+            }
+
+            #game-container {
+                visibility: hidden;
+            }
+        }
+
+        /* Make sure game is visible in landscape */
+        @media screen and (max-width: 812px) and (orientation: landscape) {
+            #orientation-message {
+                display: none;
+            }
+
+            #game-container {
+                visibility: visible;
+            }
+        }
+
+        /* Hide controller and boost button on mobile devices */
+        @media screen and (max-width: 812px) {
+
+            #joystick-zone,
+            #boost-button {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <!-- PixiJS will create a canvas here -->
+        <div id="joystick-zone"></div>
+    </div>
+
+    <!-- Orientation message for mobile devices -->
+    <div id="orientation-message">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xNiAzSDh2MTJINFY3aDRWM2MwLTIuMjEgMS43OS00IDQtNHM0IDEuNzkgNCA0djRoNHY4aC00djJjMCAyLjIxLTEuNzkgNC00IDRzLTQtMS43OS00LTR2LTJINFYyMGgxMnYtNWgtNFYzem04IDUoLTR2Nkg0di00SDJ2MTRoMjBWOGgtMnoiLz48L3N2Zz4="
+            alt="Rotate device">
+        <h2>Please rotate your device</h2>
+        <p>This game works best in landscape mode</p>
+
+        <div style="margin-top: 20px; text-align: left; max-width: 80%;">
+            <h3>GAME INSTRUCTIONS:</h3>
+            <p><strong>CONTROLS:</strong></p>
+            <ul style="padding-left: 20px;">
+                <li>Tap and hold to boost</li>
+                <li>Short tap to enter/exit orbit</li>
+            </ul>
+            <p><strong>GAMEPLAY:</strong></p>
+            <ul style="padding-left: 20px;">
+                <li>🪂 Visit planets by entering orbit</li>
+                <li>🏴‍☠️ Colonize planets by moving close to their surface</li>
+                <li>Collect fuel pods (🛰️) and avoid hazards (☄️)</li>
+                <li>Win by colonizing all planets</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Libraries from CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.2.4/dist/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
+
+    <!-- Game scripts -->
+    <script src="js/constants.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/objects/sun.js"></script>
+    <script src="js/objects/planet.js"></script>
+    <script src="js/objects/spaceship.js"></script>
+    <script src="js/objects/hazard.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/username-screen.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>

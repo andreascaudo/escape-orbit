@@ -51,9 +51,14 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 - **JavaScript**: Core language for game logic and interactions
 - **PixiJS**: Lightweight 2D rendering engine
 - **Howler.js**: Audio library for sound effects
-- **LocalStorage**: For saving high scores and leaderboard data
+- **AWS Cloud**: Deployment and hosting infrastructure
+  - **S3**: Static website hosting for frontend
+  - **CloudFront**: CDN for global content delivery
+  - **Lambda**: Serverless functions for backend API
+  - **API Gateway**: API management
+  - **DynamoDB**: NoSQL database for leaderboard storage
 
-## Setup
+## Local Setup
 
 1. Clone the repository:
    ```
@@ -61,25 +66,46 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
    cd escape-orbit
    ```
 
-2. Open `index.html` in a web browser or set up a simple server:
+2. Install dependencies:
    ```
-   python -m http.server
+   npm install
    ```
 
-3. Access the game at `http://localhost:8000`
+3. Start the local server:
+   ```
+   npm start
+   ```
 
-## Development
+4. Access the game at `http://localhost:3000`
 
-This project uses a simple structure with all assets loaded from CDNs for minimal load time.
+## Online Leaderboard System
 
-- `index.html`: Main entry point with canvas element and script links
-- `js/main.js`: Initializes the game and handles setup
-- `js/game.js`: Core game logic and state management
-- `js/controls.js`: Handles player input (keyboard and touch)
-- `js/leaderboard.js`: Manages the leaderboard functionality
-- `js/username-screen.js`: Handles the username input screen
-- `js/objects/`: Contains game object classes (planet, spaceship, hazard)
-- `PROGRESS.md`: Documents current development status and next steps
+The game includes an online leaderboard system that allows players' scores to be shared across different devices.
+
+### Local Development
+- The leaderboard server can run locally on Node.js with Express
+- For local testing, scores are stored in a JSON file on the server
+- If the server is unavailable, the game falls back to localStorage for score tracking
+
+### AWS Production Deployment
+- The production version uses AWS serverless architecture:
+  - Frontend static files hosted on S3 and served through CloudFront
+  - Backend API powered by Lambda functions and API Gateway
+  - Leaderboard data stored in DynamoDB
+  - For detailed AWS deployment instructions, see [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md)
+
+## Project Structure
+
+- `frontend/`: Contains all client-side code
+  - `js/`: JavaScript game files
+  - `css/`: Stylesheets
+  - `index.html`: Main game page
+- `backend/`: Contains all server-side code
+  - `lambda-dynamodb.js`: Lambda function handler for DynamoDB
+  - `serverless.yml`: Configuration for serverless deployment
+- `server.js`: Express server for local development
+- `FRONTEND_DEPLOYMENT_GUIDE.md`: Instructions for updating the frontend
+- `AWS_DEPLOYMENT_GUIDE.md`: Comprehensive AWS deployment guide
 
 ## License
 

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Leaderboard API Test</h1>
+
+    <button id="testGet">Test GET Request</button>
+    <button id="testPost">Test POST Request</button>
+    <button id="clearLocal">Clear localStorage</button>
+
+    <h2>Response:</h2>
+    <pre id="response">Click a button to test...</pre>
+
+    <h2>Local Storage Data:</h2>
+    <pre id="localStorage"></pre>
+
+    <script>
+        // API endpoint
+        const API_URL = 'https://cjo0bfidl9.execute-api.eu-central-1.amazonaws.com/prod/api/leaderboard';
+
+        // Display localStorage data
+        function updateLocalStorageDisplay() {
+            const data = localStorage.getItem('escapeOrbitLeaderboard');
+            document.getElementById('localStorage').textContent = data || 'No data in localStorage';
+        }
+
+        // Initial display
+        updateLocalStorageDisplay();
+
+        // Test GET request
+        document.getElementById('testGet').addEventListener('click', async () => {
+            try {
+                const response = await fetch(API_URL);
+                const jsonData = await response.json();
+
+                document.getElementById('response').textContent = JSON.stringify(jsonData, null, 2);
+                document.getElementById('response').className = 'success';
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+                document.getElementById('response').className = 'error';
+            }
+        });
+
+        // Test POST request
+        document.getElementById('testPost').addEventListener('click', async () => {
+            try {
+                const testData = {
+                    username: 'TestUser_' + Date.now().toString().slice(-4),
+                    score: Math.floor(Math.random() * 1000),
+                    planetsVisited: Math.floor(Math.random() * 8) + 1
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const jsonData = await response.json();
+
+                document.getElementById('response').textContent =
+                    `Request: ${JSON.stringify(testData)}\n\nResponse: ${JSON.stringify(jsonData, null, 2)}`;
+                document.getElementById('response').className = 'success';
+            } catch (error) {
+                document.getElementById('response').textContent = 'Error: ' + error.message;
+                document.getElementById('response').className = 'error';
+            }
+        });
+
+        // Clear localStorage
+        document.getElementById('clearLocal').addEventListener('click', () => {
+            localStorage.removeItem('escapeOrbitLeaderboard');
+            updateLocalStorageDisplay();
+            document.getElementById('response').textContent = 'localStorage cleared!';
+            document.getElementById('response').className = 'success';
+        });
+    </script>
+</body>
+
+</html>

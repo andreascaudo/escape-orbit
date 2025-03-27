@@ -219,108 +219,131 @@ class UsernameScreen {
         leaderboardBg.endFill();
         leaderboardContainer.addChild(leaderboardBg);
 
-        // Get leaderboard data
-        const leaderboard = getLeaderboard();
+        // Create loading indicator
+        const loadingText = new PIXI.Text('Loading leaderboard...', {
+            fontFamily: 'Arial',
+            fontSize: 18,
+            fill: 0xCCCCCC,
+            align: 'center'
+        });
+        loadingText.anchor.set(0.5, 0);
+        loadingText.x = 200;
+        loadingText.y = 120;
+        leaderboardContainer.addChild(loadingText);
 
-        // Display top 5 entries
-        const topEntries = leaderboard.slice(0, 5);
+        // Create container for leaderboard entries that we'll populate async
+        const entriesContainer = new PIXI.Container();
+        entriesContainer.y = 50;
+        leaderboardContainer.addChild(entriesContainer);
 
-        if (topEntries.length === 0) {
-            const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                fontFamily: 'Arial',
-                fontSize: 18,
-                fill: 0xCCCCCC,
-                align: 'center'
-            });
-            noScoresText.anchor.set(0.5, 0);
-            noScoresText.x = 200;
-            noScoresText.y = 100;
-            leaderboardContainer.addChild(noScoresText);
-        } else {
-            // Create header row
-            const headerRow = new PIXI.Container();
-            headerRow.y = 50;
-            leaderboardContainer.addChild(headerRow);
+        // Get leaderboard data asynchronously
+        getLeaderboard().then(leaderboard => {
+            // Remove loading text once we have data
+            leaderboardContainer.removeChild(loadingText);
 
-            const rankHeader = new PIXI.Text('Rank', {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fontWeight: 'bold',
-                fill: 0xCCCCFF
-            });
-            rankHeader.x = 20;
-            headerRow.addChild(rankHeader);
+            // Display top 5 entries
+            const topEntries = leaderboard.slice(0, 5);
 
-            const nameHeader = new PIXI.Text('Pilot', {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fontWeight: 'bold',
-                fill: 0xCCCCFF
-            });
-            nameHeader.x = 70;
-            headerRow.addChild(nameHeader);
+            if (topEntries.length === 0) {
+                const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
+                    fontFamily: 'Arial',
+                    fontSize: 18,
+                    fill: 0xCCCCCC,
+                    align: 'center'
+                });
+                noScoresText.anchor.set(0.5, 0);
+                noScoresText.x = 200;
+                noScoresText.y = 100;
+                leaderboardContainer.addChild(noScoresText);
+            } else {
+                // Create header row
+                const headerRow = new PIXI.Container();
+                headerRow.y = 50;
+                leaderboardContainer.addChild(headerRow);
 
-            const scoreHeader = new PIXI.Text('Score', {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fontWeight: 'bold',
-                fill: 0xCCCCFF
-            });
-            scoreHeader.x = 250;
-            headerRow.addChild(scoreHeader);
-
-            const planetsHeader = new PIXI.Text('Planets', {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fontWeight: 'bold',
-                fill: 0xCCCCFF
-            });
-            planetsHeader.x = 330;
-            headerRow.addChild(planetsHeader);
-
-            // Create entries
-            topEntries.forEach((entry, index) => {
-                const row = new PIXI.Container();
-                row.y = 80 + index * 30;
-                leaderboardContainer.addChild(row);
-
-                const rankText = new PIXI.Text(`${index + 1}`, {
+                const rankHeader = new PIXI.Text('Rank', {
                     fontFamily: 'Arial',
                     fontSize: 16,
-                    fill: 0xFFFFFF
+                    fontWeight: 'bold',
+                    fill: 0xCCCCFF
                 });
-                rankText.x = 20;
-                row.addChild(rankText);
+                rankHeader.x = 20;
+                headerRow.addChild(rankHeader);
 
-                const nameText = new PIXI.Text(entry.username, {
+                const nameHeader = new PIXI.Text('Pilot', {
                     fontFamily: 'Arial',
                     fontSize: 16,
-                    fill: 0xFFFFFF
+                    fontWeight: 'bold',
+                    fill: 0xCCCCFF
                 });
-                nameText.x = 70;
-                // Truncate name if too long
-                if (nameText.width > 170) {
-                    nameText.text = nameText.text.substring(0, 12) + '...';
-                }
-                row.addChild(nameText);
+                nameHeader.x = 70;
+                headerRow.addChild(nameHeader);
 
-                const scoreText = new PIXI.Text(entry.score.toString(), {
+                const scoreHeader = new PIXI.Text('Score', {
                     fontFamily: 'Arial',
                     fontSize: 16,
-                    fill: 0xFFFFFF
+                    fontWeight: 'bold',
+                    fill: 0xCCCCFF
                 });
-                scoreText.x = 250;
-                row.addChild(scoreText);
+                scoreHeader.x = 250;
+                headerRow.addChild(scoreHeader);
 
-                const planetsText = new PIXI.Text(entry.planetsVisited.toString(), {
+                const planetsHeader = new PIXI.Text('Planets', {
                     fontFamily: 'Arial',
                     fontSize: 16,
-                    fill: 0xFFFFFF
+                    fontWeight: 'bold',
+                    fill: 0xCCCCFF
                 });
-                planetsText.x = 330;
-                row.addChild(planetsText);
-            });
-        }
+                planetsHeader.x = 330;
+                headerRow.addChild(planetsHeader);
+
+                // Create entries
+                topEntries.forEach((entry, index) => {
+                    const row = new PIXI.Container();
+                    row.y = 80 + index * 30;
+                    leaderboardContainer.addChild(row);
+
+                    const rankText = new PIXI.Text(`${index + 1}`, {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: 0xFFFFFF
+                    });
+                    rankText.x = 20;
+                    row.addChild(rankText);
+
+                    const nameText = new PIXI.Text(entry.username, {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: 0xFFFFFF
+                    });
+                    nameText.x = 70;
+                    // Truncate name if too long
+                    if (nameText.width > 170) {
+                        nameText.text = nameText.text.substring(0, 12) + '...';
+                    }
+                    row.addChild(nameText);
+
+                    const scoreText = new PIXI.Text(entry.score.toString(), {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: 0xFFFFFF
+                    });
+                    scoreText.x = 250;
+                    row.addChild(scoreText);
+
+                    const planetsText = new PIXI.Text(entry.planetsVisited.toString(), {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: 0xFFFFFF
+                    });
+                    planetsText.x = 330;
+                    row.addChild(planetsText);
+                });
+            }
+        }).catch(error => {
+            console.error('Error loading leaderboard:', error);
+            loadingText.text = 'Error loading leaderboard';
+        });
     }
 
     setupKeyboardInput() {

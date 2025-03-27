@@ -3,7 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=yes, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="HandheldFriendly" content="true">
     <title>Escape Orbit</title>
     <style>
         body {
@@ -11,16 +16,34 @@
             padding: 0;
             overflow: hidden;
             background-color: #000;
+            width: 100vw;
+            height: 100vh;
         }
 
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            position: relative;
+            left: 0;
+            transform: none;
+            /* Remove max constraints */
+            max-width: none;
+            max-height: none;
         }
 
         #game-container {
             position: relative;
             width: 100vw;
             height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Force hardware acceleration */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
         }
 
         #joystick-zone {
@@ -131,6 +154,114 @@
                 display: none !important;
             }
         }
+
+        /* Only show orientation message on mobile in portrait mode */
+        @media screen and (max-width: 812px) and (orientation: portrait) {
+            #orientation-message {
+                display: flex;
+                padding-top: 5vh;
+                /* Add some padding at the top */
+                padding-bottom: 5vh;
+                /* Add some padding at the bottom */
+                box-sizing: border-box;
+                /* Include padding in height calculation */
+                height: 100vh;
+                /* Ensure it uses viewport height */
+                justify-content: flex-start;
+                /* Align content to the top */
+                overflow-y: auto;
+                /* Allow scrolling if content is still too tall */
+            }
+
+            #game-container {
+                visibility: hidden;
+            }
+
+            /* ---- NEW RULES FOR PORTRAIT CONTENT ---- */
+            #orientation-message img {
+                width: 60px;
+                /* Smaller image */
+                height: 60px;
+                margin-bottom: 10px;
+                /* Less space below image */
+            }
+
+            #orientation-message h2 {
+                font-size: 1.4em;
+                /* Smaller main title */
+                margin-bottom: 5px;
+            }
+
+            #orientation-message>p {
+                /* Target the "Please rotate" paragraph */
+                font-size: 0.9em;
+                margin-bottom: 15px;
+                /* Less space below rotate message */
+            }
+
+            /* Target the inner container div */
+            #orientation-message>div {
+                max-width: 90%;
+                /* Allow slightly wider content */
+                margin-top: 10px;
+                /* Reduce top margin */
+                /* Remove max-height, let parent scroll handle it */
+                /* Remove overflow-y: auto from here */
+            }
+
+            #orientation-message h3 {
+                font-size: 1.1em;
+                /* Smaller section titles */
+                margin-top: 10px;
+                margin-bottom: 5px;
+            }
+
+            #orientation-message p,
+            /* Includes CONTROLS/GAMEPLAY labels */
+            #orientation-message ul {
+                font-size: 0.8em;
+                /* Smaller instruction text */
+            }
+
+            #orientation-message ul {
+                padding-left: 15px;
+                /* Less indent */
+                margin-top: 3px;
+                margin-bottom: 10px;
+            }
+
+            #orientation-message ul li {
+                margin-bottom: 2px;
+                /* Tighter list items */
+            }
+
+            /* Leaderboard specific adjustments */
+            #orientation-message #portrait-leaderboard {
+                padding: 8px;
+                /* Less padding inside box */
+                margin-top: 15px;
+                /* Less space above leaderboard */
+            }
+
+            #orientation-message #portrait-leaderboard h3 {
+                /* "TOP PILOTS" */
+                font-size: 1.2em;
+                /* Smaller leaderboard title */
+                margin-bottom: 8px;
+            }
+
+            #orientation-message #portrait-leaderboard p,
+            /* Loading/No scores */
+            #orientation-message #portrait-leaderboard table th,
+            #orientation-message #portrait-leaderboard table td {
+                font-size: 13px;
+                /* Even smaller font in table */
+                padding: 3px;
+                /* Less cell padding */
+            }
+
+            /* ---- END OF NEW RULES ---- */
+        }
     </style>
 </head>
 
@@ -156,11 +287,22 @@
             </ul>
             <p><strong>GAMEPLAY:</strong></p>
             <ul style="padding-left: 20px;">
-                <li>🪂 Visit planets by entering orbit</li>
-                <li>🏴‍☠️ Colonize planets by moving close to their surface</li>
+                <li>🏴‍☠️ Visit planets by entering orbit</li>
                 <li>Collect fuel pods (🛰️) and avoid hazards (☄️)</li>
                 <li>Win by colonizing all planets</li>
             </ul>
+
+            <!-- Leaderboard section -->
+            <div style="margin-top: 30px; width: 100%; max-width: 400px;">
+                <h3 style="color: #FFDD33; text-align: center; font-size: 24px; margin-bottom: 15px;">⭐ TOP PILOTS ⭐
+                </h3>
+                <div id="portrait-leaderboard"
+                    style="background-color: rgba(0, 0, 51, 0.7); border: 2px solid #3355FF; border-radius: 10px; padding: 15px; margin-top: 10px; box-shadow: 0 0 10px rgba(0, 0, 255, 0.3);">
+                    <p style="text-align: center; color: #CCCCCC; font-size: 18px;" id="leaderboard-loading">Loading
+                        leaderboard...</p>
+                    <!-- Leaderboard entries will be added here by JavaScript -->
+                </div>
+            </div>
         </div>
     </div>
 

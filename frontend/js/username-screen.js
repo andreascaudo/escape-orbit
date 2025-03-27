@@ -191,7 +191,39 @@ class UsernameScreen {
         this.createLeaderboardDisplay();
     }
 
+    handleResize(newWidth, newHeight) {
+        // Reposition elements based on new screen size
+        if (this.background) {
+            this.background.clear();
+            this.background.beginFill(0x000022);
+            this.background.drawRect(0, 0, newWidth, newHeight);
+            this.background.endFill();
+        }
+        // Reposition title, subtitle, input box, buttons etc. based on newWidth/newHeight
+        // Example:
+        // if (this.title) { this.title.x = newWidth / 2; }
+        // if (this.inputBg) { this.inputBg.x = newWidth / 2 - 200; this.inputBg.y = newHeight / 2 - 25; }
+        // ... and so on for all UI elements ...
+        // Don't forget to update cursor position relative to inputText
+        // this.updateCursorPosition();
+
+        // Re-create/reposition leaderboard if it's part of this screen (only for desktop)
+        // if (!this.detectMobile() && this.leaderboardContainer) {
+        //     // Remove old one
+        //     this.container.removeChild(this.leaderboardContainer);
+        //     // Recreate or reposition
+        //     this.createLeaderboardDisplay(); // Assuming this function correctly uses current app dimensions
+        // }
+    }
+
     createLeaderboardDisplay() {
+        // Check if on mobile device, and skip creating leaderboard if so
+        const isMobile = this.detectMobile();
+        if (isMobile) {
+            // On mobile, we'll show the leaderboard on the game instructions page instead
+            return;
+        }
+
         // Create leaderboard container
         const leaderboardContainer = new PIXI.Container();
         leaderboardContainer.x = this.app.screen.width / 2 - 200;
@@ -403,15 +435,29 @@ class UsernameScreen {
     }
 
     destroy() {
-        // Remove from stage if still attached
-        if (this.container.parent) {
-            this.container.parent.removeChild(this.container);
-        }
-
-        // Remove event listeners
+        // Remove key event listeners
         window.removeEventListener('keydown', this.handleKeyDown.bind(this));
 
-        // Stop animations
+        // Stop ticker
         this.app.ticker.remove(this.animateStars, this);
+
+        // Remove container from stage
+        this.app.stage.removeChild(this.container);
+
+        // Call the onComplete callback with the username
+        this.onComplete(this.username);
+    }
+
+    // Detect if the user is on a mobile device
+    detectMobile() {
+        return (
+            // Check for touch capability
+            'ontouchstart' in window ||
+            navigator.maxTouchPoints > 0 ||
+            // Check for mobile user agent
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            // Check for viewport width (most mobile devices have smaller screens)
+            window.innerWidth <= 800
+        );
     }
 } 

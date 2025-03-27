@@ -19,10 +19,27 @@ class Game {
         if (this.isMobile) {
             // Check if we're in landscape (width > height)
             const isLandscape = window.innerWidth > window.innerHeight;
-            // For landscape orientation on mobile, use a slightly larger zoom 
-            this.zoom = isLandscape ? 0.4 : 0.3; // 40% zoom on mobile landscape, 30% on portrait
+            const screenRatio = isLandscape
+                ? window.innerWidth / window.innerHeight
+                : window.innerHeight / window.innerWidth;
+
+            // Adjust zoom based on device aspect ratio
+            if (isLandscape) {
+                // For landscape orientation
+                if (screenRatio > 2) { // Very wide screen (like iPhone X)
+                    this.zoom = 0.35;
+                } else if (screenRatio > 1.7) { // Standard wide screen
+                    this.zoom = 0.4;
+                } else { // More square-ish screen
+                    this.zoom = 0.45;
+                }
+            } else {
+                // For portrait orientation (though we show a rotate message)
+                this.zoom = 0.3;
+            }
         } else {
-            this.zoom = 0.6; // 60% on desktop
+            // Desktop zoom
+            this.zoom = 0.6;
         }
         this.minZoom = 0.3; // Allow zooming out further
         this.maxZoom = 2;
@@ -50,6 +67,7 @@ class Game {
         this.orbitEntryText = null;
         this.sunWarningText = null;
         this.usernameText = null; // Add username display
+        this.boundaryWarningText = null; // Add boundary warning text
 
         // Sound effects
         this.sounds = {
@@ -150,6 +168,20 @@ class Game {
         this.usernameText.y = 140;
         this.uiContainer.addChild(this.usernameText);
 
+        // Create boundary warning text
+        this.boundaryWarningText = new PIXI.Text('WARNING: Approaching solar system boundary!', {
+            fontFamily: 'Arial',
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: 0xFF9900,
+            align: 'center'
+        });
+        this.boundaryWarningText.anchor.set(0.5);
+        this.boundaryWarningText.x = this.width / 2;
+        this.boundaryWarningText.y = 130;
+        this.boundaryWarningText.visible = false; // Initially hidden
+        this.uiContainer.addChild(this.boundaryWarningText);
+
         // Create zoom instruction - only on desktop
         if (!this.isMobile) {
             const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
@@ -204,13 +236,55 @@ class Game {
         this.uiContainer.addChild(this.messageText);
     }
 
+    handleResize(newWidth, newHeight) {
+        this.width = newWidth;
+        this.height = newHeight;
+
+        // Update UI positions more robustly
+        if (this.fuelText) { this.fuelText.x = 20; this.fuelText.y = 20; }
+        if (this.scoreText) { this.scoreText.x = 20; this.scoreText.y = 50; }
+        if (this.zoomText) { this.zoomText.x = 20; this.zoomText.y = 80; }
+        if (this.planetCountText) { this.planetCountText.x = 20; this.planetCountText.y = 110; }
+        if (this.usernameText) { this.usernameText.x = 20; this.usernameText.y = 140; }
+        if (this.messageText) { this.messageText.x = newWidth / 2; this.messageText.y = newHeight / 2; }
+        if (this.orbitHelpText) { this.orbitHelpText.x = newWidth / 2; this.orbitHelpText.y = newHeight - 40; }
+        if (this.orbitEntryText) { this.orbitEntryText.x = newWidth / 2; this.orbitEntryText.y = newHeight - 70; }
+        if (this.sunWarningText) { this.sunWarningText.x = newWidth / 2; this.sunWarningText.y = 100; }
+        if (this.boundaryWarningText) { this.boundaryWarningText.x = newWidth / 2; this.boundaryWarningText.y = 130; }
+
+        // Recalculate boundary maybe? Or other dimension-dependent things
+        this.drawBoundary();
+    }
+
     showTitleScreen() {
         this.gameState = 'title';
+
+        // Check orientation
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const screenRatio = window.innerWidth / window.innerHeight;
 
         // Create a background for the instructions
         const instructionsBg = new PIXI.Graphics();
         instructionsBg.beginFill(0x000000, 0.1);
-        instructionsBg.drawRoundedRect(-this.width * 0.4, -this.height * 0.4, this.width * 0.8, this.height * 0.8, 20);
+
+        // Adjust container size based on device and screen ratio
+        if (this.isMobile) {
+            // Mobile layouts
+            if (isPortrait) {
+                // Portrait mode (though we show a rotate message)
+                instructionsBg.drawRoundedRect(-this.width * 0.45, -this.height * 0.45, this.width * 0.9, this.height * 0.9, 20);
+            } else if (screenRatio > 2) {
+                // Very wide screen (like iPhone X in landscape)
+                instructionsBg.drawRoundedRect(-this.width * 0.35, -this.height * 0.45, this.width * 0.7, this.height * 0.9, 20);
+            } else {
+                // Standard mobile landscape
+                instructionsBg.drawRoundedRect(-this.width * 0.4, -this.height * 0.4, this.width * 0.8, this.height * 0.8, 20);
+            }
+        } else {
+            // Desktop layout
+            instructionsBg.drawRoundedRect(-this.width * 0.4, -this.height * 0.4, this.width * 0.8, this.height * 0.8, 20);
+        }
+
         instructionsBg.endFill();
 
         // Add leaderboard display to title screen
@@ -259,7 +333,21 @@ class Game {
         });
         titleText.anchor.set(0.5, 0);
         titleText.x = 0;
-        titleText.y = -this.height * 0.35;
+
+        // Adjust title position based on screen
+        if (this.isMobile) {
+            if (screenRatio > 2) {
+                // Very wide screen - position higher
+                titleText.y = -this.height * 0.3;
+            } else {
+                // Standard mobile - position slightly higher
+                titleText.y = -this.height * 0.32;
+            }
+        } else {
+            // Desktop position
+            titleText.y = -this.height * 0.35;
+        }
+
         titleContainer.addChild(titleText);
 
         // Add player username
@@ -271,7 +359,21 @@ class Game {
         });
         welcomeText.anchor.set(0.5, 0);
         welcomeText.x = 0;
-        welcomeText.y = -this.height * 0.25;
+
+        // Adjust welcome text position based on screen
+        if (this.isMobile) {
+            if (screenRatio > 2) {
+                // Very wide screen - position closer to title
+                welcomeText.y = -this.height * 0.22;
+            } else {
+                // Standard mobile - adjust accordingly
+                welcomeText.y = -this.height * 0.23;
+            }
+        } else {
+            // Desktop position
+            welcomeText.y = -this.height * 0.25;
+        }
+
         titleContainer.addChild(welcomeText);
 
         // Add instructions text
@@ -330,9 +432,128 @@ class Game {
         scoringText.y = -10;
         titleContainer.addChild(scoringText);
 
-        // Add leaderboard elements
-        titleContainer.addChild(leaderboardTitle);
-        titleContainer.addChild(leaderboardContainer);
+        // Add leaderboard elements - enhanced for mobile
+        if (this.isMobile) {
+            // Check orientation
+            const isPortrait = window.innerHeight > window.innerWidth;
+
+            // Position leaderboard below scoring info with more spacing on mobile
+            const mobileLeaderboardTitle = new PIXI.Text('TOP PILOTS', {
+                fontFamily: 'Arial',
+                fontSize: 20,
+                fontWeight: 'bold',
+                fill: 0xFFDD33,
+                align: 'center'
+            });
+            mobileLeaderboardTitle.anchor.set(0.5, 0);
+            mobileLeaderboardTitle.x = 0;
+
+            // Adjust position based on orientation
+            if (isPortrait) {
+                // In portrait mode, make sure it's clearly visible and not off-screen
+                mobileLeaderboardTitle.y = 60;
+
+                // Add attention indicator in portrait mode
+                const attentionText = new PIXI.Text('⭐ LEADERBOARD ⭐', {
+                    fontFamily: 'Arial',
+                    fontSize: 16,
+                    fill: 0xFFFFFF,
+                    align: 'center'
+                });
+                attentionText.anchor.set(0.5, 0);
+                attentionText.x = 0;
+                attentionText.y = mobileLeaderboardTitle.y - 25;
+                titleContainer.addChild(attentionText);
+            } else {
+                // In landscape, position it below scoring info
+                mobileLeaderboardTitle.y = scoringText.y + 100;
+            }
+
+            titleContainer.addChild(mobileLeaderboardTitle);
+
+            // Create leaderboard container specifically designed for mobile
+            const mobileLeaderboardContainer = new PIXI.Container();
+            mobileLeaderboardContainer.y = mobileLeaderboardTitle.y + 30;
+            mobileLeaderboardContainer.x = 0;
+            titleContainer.addChild(mobileLeaderboardContainer);
+
+            // Add background for better readability on mobile
+            const leaderboardBg = new PIXI.Graphics();
+            leaderboardBg.beginFill(0x000033, 0.7); // More opaque background
+            leaderboardBg.lineStyle(2, 0x3355FF);
+            if (isPortrait) {
+                // Taller and wider in portrait mode
+                leaderboardBg.drawRoundedRect(-170, 0, 340, 190, 10);
+            } else {
+                // Original size in landscape mode
+                leaderboardBg.drawRoundedRect(-150, 0, 300, 150, 10);
+            }
+            leaderboardBg.endFill();
+            mobileLeaderboardContainer.addChild(leaderboardBg);
+
+            // Create loading text
+            const mobileLoadingText = new PIXI.Text('Loading leaderboard...', {
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: 0xCCCCCC,
+                align: 'center'
+            });
+            mobileLoadingText.anchor.set(0.5, 0);
+            mobileLoadingText.x = 0;
+            mobileLoadingText.y = 60;
+            mobileLeaderboardContainer.addChild(mobileLoadingText);
+
+            // Fetch and populate the mobile leaderboard
+            getLeaderboard().then(leaderboard => {
+                // Remove loading text
+                mobileLeaderboardContainer.removeChild(mobileLoadingText);
+
+                const topEntries = leaderboard.slice(0, 5);
+                // Check orientation
+                const isPortrait = window.innerHeight > window.innerWidth;
+                const fontSize = isPortrait ? 18 : 16; // Larger font in portrait mode
+                const lineSpacing = isPortrait ? 30 : 25; // More space between lines in portrait
+
+                if (topEntries.length === 0) {
+                    const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
+                        fontFamily: 'Arial',
+                        fontSize: fontSize,
+                        fill: 0xCCCCCC,
+                        align: 'center'
+                    });
+                    noScoresText.anchor.set(0.5, 0);
+                    noScoresText.x = 0;
+                    noScoresText.y = 60;
+                    mobileLeaderboardContainer.addChild(noScoresText);
+                } else {
+                    // Display top entries in a more compact, mobile-friendly format
+                    topEntries.forEach((entry, index) => {
+                        const scoreRow = new PIXI.Text(
+                            `${index + 1}. ${entry.username} - ${entry.score} pts`,
+                            {
+                                fontFamily: 'Arial',
+                                fontSize: fontSize,
+                                fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
+                                align: 'center'
+                            }
+                        );
+                        scoreRow.anchor.set(0.5, 0);
+                        scoreRow.x = 0;
+                        scoreRow.y = 20 + index * lineSpacing;
+                        mobileLeaderboardContainer.addChild(scoreRow);
+                    });
+                }
+            }).catch(error => {
+                console.error('Error loading leaderboard:', error);
+                mobileLoadingText.text = 'Error loading leaderboard';
+            });
+        }
+
+        // Add standard leaderboard for desktop (only on non-mobile)
+        if (!this.isMobile) {
+            titleContainer.addChild(leaderboardTitle);
+            titleContainer.addChild(leaderboardContainer);
+        }
 
         // Position the title container
         titleContainer.x = this.width / 2;
@@ -391,7 +612,24 @@ class Game {
         startButton.lineStyle(2, 0x6688FF);
         startButton.drawRoundedRect(-100, 0, 200, 50, 10);
         startButton.endFill();
-        startButton.y = this.height * 0.25;
+
+        // Adjust button position based on device
+        if (this.isMobile) {
+            // Check orientation
+            const isPortrait = window.innerHeight > window.innerWidth;
+
+            if (isPortrait) {
+                // In portrait mode, position button below the leaderboard
+                startButton.y = this.height * 0.48; // Move further down in portrait
+            } else {
+                // In landscape, use original position
+                startButton.y = this.height * 0.38;
+            }
+        } else {
+            // Keep original position on desktop
+            startButton.y = this.height * 0.25;
+        }
+
         startButton.interactive = true;
         startButton.buttonMode = true;
         startButton.eventMode = 'static';
@@ -432,6 +670,23 @@ class Game {
             this.uiContainer.removeChild(this.titleContainer);
             this.titleContainer = null;
         }
+
+        // Ensure the game over leaderboard is properly removed
+        if (this.gameOverLeaderboard) {
+            if (this.gameOverLeaderboard.parent) {
+                this.gameOverLeaderboard.parent.removeChild(this.gameOverLeaderboard);
+            }
+            this.gameOverLeaderboard = null;
+        }
+
+        // Remove any other leaderboard elements that might exist
+        this.uiContainer.children.forEach(child => {
+            if (child &&
+                (child.name === 'leaderboard' ||
+                    (child instanceof PIXI.Container && child.children.some(c => c.text && c.text.includes('TOP PILOTS'))))) {
+                this.uiContainer.removeChild(child);
+            }
+        });
 
         // Clear message text from previous game
         this.messageText.text = '';
@@ -675,6 +930,40 @@ class Game {
                     this.sunWarningText.visible = true;
                 } else if (this.sunWarningText) {
                     this.sunWarningText.visible = false;
+                }
+
+                // Check if spaceship is outside the solar system boundary
+                if (this.boundary && !this.spaceship.orbiting) {
+                    // Get the center of the solar system
+                    const centerX = this.width / 2;
+                    const centerY = this.height / 2;
+
+                    // Calculate distance from center
+                    const distanceFromCenter = distance(this.spaceship.x, this.spaceship.y, centerX, centerY);
+
+                    // Use the stored boundary radius
+                    const boundaryRadius = this.boundaryRadius || (CONSTANTS.PLANETS[CONSTANTS.PLANETS.length - 1].orbitRadius * 1.1);
+
+                    // Calculate how close to the boundary we are (as a percentage)
+                    const distancePercentage = distanceFromCenter / boundaryRadius;
+
+                    // If ship is beyond the boundary, end the game
+                    if (distanceFromCenter > boundaryRadius) {
+                        this.gameOver('Your ship drifted out of the solar system!');
+                        return;
+                    }
+
+                    // Show warning when within 10% of the boundary
+                    if (distancePercentage > 0.9) {
+                        if (this.boundaryWarningText) {
+                            this.boundaryWarningText.visible = true;
+                            // Pulse the warning text (more intense as we get closer)
+                            const pulseIntensity = 0.5 + (distancePercentage - 0.9) * 5; // Ranges from 0.5 to 1.0
+                            this.boundaryWarningText.alpha = 0.5 + Math.sin(Date.now() * 0.01) * pulseIntensity;
+                        }
+                    } else if (this.boundaryWarningText) {
+                        this.boundaryWarningText.visible = false;
+                    }
                 }
             }
 
@@ -1216,6 +1505,7 @@ class Game {
     displayLeaderboardAfterGameOver() {
         // Create leaderboard container
         const leaderboardContainer = new PIXI.Container();
+        leaderboardContainer.name = 'leaderboard'; // Add a name for easier identification
         leaderboardContainer.x = this.width / 2;
         leaderboardContainer.y = this.height / 2 + 150;
         this.uiContainer.addChild(leaderboardContainer);
@@ -1347,7 +1637,7 @@ class Game {
         // Draw a boundary around the solar system to help with orientation
         const outerPlanetDistance = CONSTANTS.PLANETS[CONSTANTS.PLANETS.length - 1].orbitRadius;
         // Make the boundary slightly larger to accommodate the larger orbits
-        const boundaryRadius = outerPlanetDistance * 1.1;
+        const boundaryRadius = outerPlanetDistance * 1.5;
 
         // Create a boundary circle
         if (!this.boundary) {
@@ -1356,7 +1646,31 @@ class Game {
         }
 
         this.boundary.clear();
-        this.boundary.lineStyle(2, 0x444466, 0.3);
+
+        // Store the boundary radius for use in collision detection
+        this.boundaryRadius = boundaryRadius;
+
+        // Default boundary appearance
+        let boundaryAlpha = 0; //invisible
+        let boundaryColor = 0x444466;
+        let lineWidth = 2;
+
+        // If spaceship exists and is close to boundary, highlight it
+        if (this.spaceship && !this.spaceship.orbiting) {
+            const centerX = this.width / 2;
+            const centerY = this.height / 2;
+            const distanceFromCenter = distance(this.spaceship.x, this.spaceship.y, centerX, centerY);
+            const distancePercentage = distanceFromCenter / boundaryRadius;
+
+            if (distancePercentage > 0.9) {
+                // Change boundary appearance based on proximity
+                boundaryColor = 0xFF9900; // Warning color (orange)
+                boundaryAlpha = 0.5 + Math.sin(Date.now() * 0.01) * 0.5; // Pulsing effect
+                lineWidth = 3; // Thicker line
+            }
+        }
+
+        this.boundary.lineStyle(lineWidth, boundaryColor, boundaryAlpha);
         this.boundary.drawCircle(this.width / 2, this.height / 2, boundaryRadius);
     }
 
@@ -1586,6 +1900,11 @@ class Game {
             this.sunWarningText.visible = false;
         }
 
+        // Hide boundary warning text if it exists
+        if (this.boundaryWarningText) {
+            this.boundaryWarningText.visible = false;
+        }
+
         // Stop any sound effects that might be playing
         if (this.sounds && this.sounds.burning) {
             this.sounds.burning.stop();
@@ -1667,10 +1986,12 @@ class Game {
             // Add a celebration effect
             this.createCompletionCelebration();
 
-            // End the game in victory
+            // Show a follow-up message with a delay
             setTimeout(() => {
-                this.gameOver("MISSION ACCOMPLISHED! All planets visited!", true);
-            }, 5000);
+                this.showMessage("Continue exploring the solar system!", 3000);
+            }, 3500);
+
+            // No longer ending the game after visiting all planets
         }
     }
 } 

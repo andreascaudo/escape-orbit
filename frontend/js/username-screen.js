@@ -136,7 +136,7 @@ class UsernameScreen {
         this.inputBg.y = inputY;
         this.container.addChild(this.inputBg);
 
-        this.inputText = new PIXI.Text(this.username, {
+        this.inputText = new PIXI.Text("", {
             fontFamily: 'Arial',
             fontSize: 24,
             fill: 0xFFFFFF,

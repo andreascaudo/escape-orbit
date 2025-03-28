@@ -10,7 +10,7 @@ const CONSTANTS = {
     BOOST_POWER: 0.18,      // Kept the same
 
     // Fuel settings
-    MAX_FUEL: 10000,
+    MAX_FUEL: 100,
     ORBIT_FUEL_CONSUMPTION: 0.015,  // Reduced by 50% (from 0.03)
     BOOST_FUEL_CONSUMPTION: 0.2,    // Reduced by 50% (from 0.4)
     PLANET_REFUEL_AMOUNT: 30,       // Kept the same to maintain game balance

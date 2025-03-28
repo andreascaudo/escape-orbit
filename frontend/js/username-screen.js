@@ -25,18 +25,18 @@ class UsernameScreen {
     }
 
     createBackground() {
-        // Create a starfield background with additional cosmic elements
+        // Create a starfield background
         this.background = new PIXI.Graphics();
-        const gradientTexture = PIXI.Texture.from('path/to/nebula_texture.jpg'); // Add a nebula texture
-        this.background.beginTextureFill({ texture: gradientTexture });
+        this.background.beginFill(0x000022);
         this.background.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
         this.background.endFill();
         this.container.addChild(this.background);
 
-        // Add stars with twinkling effect
+        // Add stars
         this.stars = new PIXI.Container();
         this.container.addChild(this.stars);
 
+        // Add 200 stars
         for (let i = 0; i < 200; i++) {
             const star = new PIXI.Graphics();
             const size = Math.random() * 2 + 1;
@@ -66,53 +66,53 @@ class UsernameScreen {
     }
 
     createUI() {
-        // Create title with enhanced styling
+        // Create title
         const title = new PIXI.Text('ESCAPE ORBIT', {
             fontFamily: 'Arial',
-            fontSize: 64, // Larger font size
+            fontSize: 48,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
             align: 'center',
             dropShadow: true,
             dropShadowColor: 0x000000,
-            dropShadowDistance: 5
+            dropShadowDistance: 3
         });
         title.anchor.set(0.5, 0);
         title.x = this.app.screen.width / 2;
-        title.y = 40; // Adjusted for landscape
+        title.y = 60;
         this.container.addChild(title);
 
         // Create subtitle
         const subtitle = new PIXI.Text('What\'s your callsign, pilot?', {
             fontFamily: 'Arial',
-            fontSize: 28, // Slightly larger font size
+            fontSize: 24,
             fill: 0xCCCCFF,
             align: 'center'
         });
         subtitle.anchor.set(0.5, 0);
         subtitle.x = this.app.screen.width / 2;
-        subtitle.y = 120; // Adjusted for landscape
+        subtitle.y = 130;
         this.container.addChild(subtitle);
 
-        // Create input box background with gradient
+        // Create input box background
         const inputBg = new PIXI.Graphics();
         inputBg.beginFill(0x000033);
         inputBg.lineStyle(2, 0x3355FF);
-        inputBg.drawRoundedRect(0, 0, 500, 60, 15); // Larger input box
+        inputBg.drawRoundedRect(0, 0, 400, 50, 10);
         inputBg.endFill();
-        inputBg.x = this.app.screen.width / 2 - 250;
-        inputBg.y = this.app.screen.height / 2 - 150;
+        inputBg.x = this.app.screen.width / 2 - 200;
+        inputBg.y = this.app.screen.height / 2 - 170;
         this.container.addChild(inputBg);
 
         // Create input text
         this.inputText = new PIXI.Text(this.username, {
             fontFamily: 'Arial',
-            fontSize: 28, // Larger font size
+            fontSize: 24,
             fill: 0xFFFFFF,
             align: 'left'
         });
         this.inputText.x = inputBg.x + 10;
-        this.inputText.y = inputBg.y + 15;
+        this.inputText.y = inputBg.y + 10;
         this.container.addChild(this.inputText);
 
         // Create cursor
@@ -135,21 +135,21 @@ class UsernameScreen {
         const randomButton = new PIXI.Graphics();
         randomButton.beginFill(0x225588);
         randomButton.lineStyle(2, 0x3355FF);
-        randomButton.drawRoundedRect(0, 0, 220, 50, 15); // Larger button
+        randomButton.drawRoundedRect(0, 0, 200, 40, 10);
         randomButton.endFill();
-        randomButton.x = this.app.screen.width / 2 - 230;
-        randomButton.y = this.app.screen.height / 2 - 70;
+        randomButton.x = this.app.screen.width / 2 - 210;
+        randomButton.y = this.app.screen.height / 2 - 100;
         this.container.addChild(randomButton);
 
         const randomText = new PIXI.Text('Random Name', {
             fontFamily: 'Arial',
-            fontSize: 22, // Larger font size
+            fontSize: 20,
             fill: 0xFFFFFF,
             align: 'center'
         });
         randomText.anchor.set(0.5, 0.5);
-        randomText.x = randomButton.x + 110;
-        randomText.y = randomButton.y + 25;
+        randomText.x = randomButton.x + 100;
+        randomText.y = randomButton.y + 20;
         this.container.addChild(randomText);
 
         // Make random button interactive
@@ -165,21 +165,21 @@ class UsernameScreen {
         const startButton = new PIXI.Graphics();
         startButton.beginFill(0x225588);
         startButton.lineStyle(2, 0x3355FF);
-        startButton.drawRoundedRect(0, 0, 220, 50, 15); // Larger button
+        startButton.drawRoundedRect(0, 0, 200, 40, 10);
         startButton.endFill();
         startButton.x = this.app.screen.width / 2 + 10;
-        startButton.y = this.app.screen.height / 2 - 70;
+        startButton.y = this.app.screen.height / 2 - 100;
         this.container.addChild(startButton);
 
         const startText = new PIXI.Text('Start Game', {
             fontFamily: 'Arial',
-            fontSize: 22, // Larger font size
+            fontSize: 20,
             fill: 0xFFFFFF,
             align: 'center'
         });
         startText.anchor.set(0.5, 0.5);
-        startText.x = startButton.x + 110;
-        startText.y = startButton.y + 25;
+        startText.x = startButton.x + 100;
+        startText.y = startButton.y + 20;
         this.container.addChild(startText);
 
         // Make start button interactive

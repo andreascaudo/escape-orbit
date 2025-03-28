@@ -649,4 +649,12 @@ class Spaceship {
     stopBoosting() {
         this.boosting = false;
     }
+
+    // Add fuel, ensuring it doesn't exceed maximum
+    refuel(amount) {
+        this.fuel += amount;
+        this.fuel = Math.max(0, Math.min(CONSTANTS.MAX_FUEL, this.fuel));
+        // Optional: log fuel level after refuel for debugging
+        // console.log(`Refueled by ${amount}. Current fuel: ${this.fuel.toFixed(1)}`);
+    }
 } 

@@ -25,18 +25,18 @@ class UsernameScreen {
     }
 
     createBackground() {
-        // Create a starfield background
+        // Create a starfield background with additional cosmic elements
         this.background = new PIXI.Graphics();
-        this.background.beginFill(0x000022);
+        const gradientTexture = PIXI.Texture.from('path/to/nebula_texture.jpg'); // Add a nebula texture
+        this.background.beginTextureFill({ texture: gradientTexture });
         this.background.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
         this.background.endFill();
         this.container.addChild(this.background);
 
-        // Add stars
+        // Add stars with twinkling effect
         this.stars = new PIXI.Container();
         this.container.addChild(this.stars);
 
-        // Add 200 stars
         for (let i = 0; i < 200; i++) {
             const star = new PIXI.Graphics();
             const size = Math.random() * 2 + 1;
@@ -66,53 +66,53 @@ class UsernameScreen {
     }
 
     createUI() {
-        // Create title
+        // Create title with enhanced styling
         const title = new PIXI.Text('ESCAPE ORBIT', {
             fontFamily: 'Arial',
-            fontSize: 48,
+            fontSize: 64, // Larger font size
             fontWeight: 'bold',
             fill: 0xFFFFFF,
             align: 'center',
             dropShadow: true,
             dropShadowColor: 0x000000,
-            dropShadowDistance: 3
+            dropShadowDistance: 5
         });
         title.anchor.set(0.5, 0);
         title.x = this.app.screen.width / 2;
-        title.y = 60;
+        title.y = 40; // Adjusted for landscape
         this.container.addChild(title);
 
         // Create subtitle
         const subtitle = new PIXI.Text('What\'s your callsign, pilot?', {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: 28, // Slightly larger font size
             fill: 0xCCCCFF,
             align: 'center'
         });
         subtitle.anchor.set(0.5, 0);
         subtitle.x = this.app.screen.width / 2;
-        subtitle.y = 130;
+        subtitle.y = 120; // Adjusted for landscape
         this.container.addChild(subtitle);
 
-        // Create input box background
+        // Create input box background with gradient
         const inputBg = new PIXI.Graphics();
         inputBg.beginFill(0x000033);
         inputBg.lineStyle(2, 0x3355FF);
-        inputBg.drawRoundedRect(0, 0, 400, 50, 10);
+        inputBg.drawRoundedRect(0, 0, 500, 60, 15); // Larger input box
         inputBg.endFill();
-        inputBg.x = this.app.screen.width / 2 - 200;
-        inputBg.y = this.app.screen.height / 2 - 25;
+        inputBg.x = this.app.screen.width / 2 - 250;
+        inputBg.y = this.app.screen.height / 2 - 150;
         this.container.addChild(inputBg);
 
         // Create input text
         this.inputText = new PIXI.Text(this.username, {
             fontFamily: 'Arial',
-            fontSize: 24,
+            fontSize: 28, // Larger font size
             fill: 0xFFFFFF,
             align: 'left'
         });
         this.inputText.x = inputBg.x + 10;
-        this.inputText.y = inputBg.y + 10;
+        this.inputText.y = inputBg.y + 15;
         this.container.addChild(this.inputText);
 
         // Create cursor
@@ -135,21 +135,21 @@ class UsernameScreen {
         const randomButton = new PIXI.Graphics();
         randomButton.beginFill(0x225588);
         randomButton.lineStyle(2, 0x3355FF);
-        randomButton.drawRoundedRect(0, 0, 200, 40, 10);
+        randomButton.drawRoundedRect(0, 0, 220, 50, 15); // Larger button
         randomButton.endFill();
-        randomButton.x = this.app.screen.width / 2 - 210;
-        randomButton.y = this.app.screen.height / 2 + 50;
+        randomButton.x = this.app.screen.width / 2 - 230;
+        randomButton.y = this.app.screen.height / 2 - 70;
         this.container.addChild(randomButton);
 
         const randomText = new PIXI.Text('Random Name', {
             fontFamily: 'Arial',
-            fontSize: 20,
+            fontSize: 22, // Larger font size
             fill: 0xFFFFFF,
             align: 'center'
         });
         randomText.anchor.set(0.5, 0.5);
-        randomText.x = randomButton.x + 100;
-        randomText.y = randomButton.y + 20;
+        randomText.x = randomButton.x + 110;
+        randomText.y = randomButton.y + 25;
         this.container.addChild(randomText);
 
         // Make random button interactive
@@ -165,21 +165,21 @@ class UsernameScreen {
         const startButton = new PIXI.Graphics();
         startButton.beginFill(0x225588);
         startButton.lineStyle(2, 0x3355FF);
-        startButton.drawRoundedRect(0, 0, 200, 40, 10);
+        startButton.drawRoundedRect(0, 0, 220, 50, 15); // Larger button
         startButton.endFill();
         startButton.x = this.app.screen.width / 2 + 10;
-        startButton.y = this.app.screen.height / 2 + 50;
+        startButton.y = this.app.screen.height / 2 - 70;
         this.container.addChild(startButton);
 
         const startText = new PIXI.Text('Start Game', {
             fontFamily: 'Arial',
-            fontSize: 20,
+            fontSize: 22, // Larger font size
             fill: 0xFFFFFF,
             align: 'center'
         });
         startText.anchor.set(0.5, 0.5);
-        startText.x = startButton.x + 100;
-        startText.y = startButton.y + 20;
+        startText.x = startButton.x + 110;
+        startText.y = startButton.y + 25;
         this.container.addChild(startText);
 
         // Make start button interactive
@@ -224,10 +224,20 @@ class UsernameScreen {
             return;
         }
 
-        // Create leaderboard container
+        // --- Constants for scrolling ---
+        const ROW_HEIGHT = 30;
+        const VISIBLE_ROWS = 5;
+        const SCROLL_AREA_HEIGHT = VISIBLE_ROWS * ROW_HEIGHT;
+        const LEADERBOARD_WIDTH = 400;
+        const HEADER_HEIGHT = 30; // Approx height for the header row
+        const CONTENT_START_Y = 40 + HEADER_HEIGHT; // Y position where scrollable content starts (below title + header)
+        // --- End Constants ---
+
+        // Create main leaderboard container
         const leaderboardContainer = new PIXI.Container();
-        leaderboardContainer.x = this.app.screen.width / 2 - 200;
-        leaderboardContainer.y = this.app.screen.height / 2 + 120;
+        // Positioning adjusted slightly to accommodate potential scrollbar later if needed
+        leaderboardContainer.x = this.app.screen.width / 2 - LEADERBOARD_WIDTH / 2;
+        leaderboardContainer.y = this.app.screen.height / 2 + 100; // Moved up slightly
         this.container.addChild(leaderboardContainer);
 
         // Create leaderboard title
@@ -238,145 +248,188 @@ class UsernameScreen {
             fill: 0xFFDD33,
             align: 'center'
         });
-        leaderboardTitle.anchor.set(0.5, 0);
-        leaderboardTitle.x = 200;
+        leaderboardTitle.anchor.set(0.5, -0.25);
+        leaderboardTitle.x = LEADERBOARD_WIDTH / 2;
         leaderboardTitle.y = 0;
         leaderboardContainer.addChild(leaderboardTitle);
 
-        // Create leaderboard background
+        // Create leaderboard background (acts as scroll trigger area)
+        // Adjusted height to include title and scroll area
+        const totalBgHeight = CONTENT_START_Y + SCROLL_AREA_HEIGHT + 10; // Added padding
         const leaderboardBg = new PIXI.Graphics();
         leaderboardBg.beginFill(0x000033, 0.5);
         leaderboardBg.lineStyle(2, 0x3355FF);
-        leaderboardBg.drawRoundedRect(0, 40, 400, 180, 10);
+        leaderboardBg.drawRoundedRect(0, 0, LEADERBOARD_WIDTH, totalBgHeight, 10); // y=0 relative to leaderboardContainer
         leaderboardBg.endFill();
+        leaderboardBg.eventMode = 'static'; // Make it interactive for scroll events
+        leaderboardBg.cursor = 'default'; // Keep default cursor
         leaderboardContainer.addChild(leaderboardBg);
 
-        // Create loading indicator
+        // --- Header Row ---
+        const headerRow = new PIXI.Container();
+        headerRow.y = 40; // Below title
+        leaderboardContainer.addChild(headerRow);
+
+        const rankHeader = new PIXI.Text('Rank', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        rankHeader.x = 20;
+        headerRow.addChild(rankHeader);
+
+        const nameHeader = new PIXI.Text('Pilot', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        nameHeader.x = 70;
+        headerRow.addChild(nameHeader);
+
+        const scoreHeader = new PIXI.Text('Score', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        scoreHeader.x = 250;
+        headerRow.addChild(scoreHeader);
+
+        const planetsHeader = new PIXI.Text('Planets', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        planetsHeader.x = 330;
+        headerRow.addChild(planetsHeader);
+        // --- End Header Row ---
+
+
+        // --- Scrollable Content Area ---
+        // Container for all entries (will be masked and moved)
+        const scrollContentContainer = new PIXI.Container();
+        scrollContentContainer.y = CONTENT_START_Y; // Position below header
+        leaderboardContainer.addChild(scrollContentContainer);
+        this.leaderboardScrollContent = scrollContentContainer; // Store reference for scrolling
+
+        // Create the mask graphic
+        const scrollMask = new PIXI.Graphics();
+        scrollMask.beginFill(0xff0000, 0.5); // Color/alpha doesn't matter for mask
+        scrollMask.drawRect(0, CONTENT_START_Y, LEADERBOARD_WIDTH, SCROLL_AREA_HEIGHT); // Position and size of visible area
+        scrollMask.endFill();
+        leaderboardContainer.addChild(scrollMask); // Add mask to the main container
+
+        // Apply the mask
+        scrollContentContainer.mask = scrollMask;
+        // --- End Scrollable Content Area Setup ---
+
+
+        // Create loading indicator (positioned within the eventual scroll area)
         const loadingText = new PIXI.Text('Loading leaderboard...', {
             fontFamily: 'Arial',
             fontSize: 18,
             fill: 0xCCCCCC,
             align: 'center'
         });
-        loadingText.anchor.set(0.5, 0);
-        loadingText.x = 200;
-        loadingText.y = 120;
-        leaderboardContainer.addChild(loadingText);
+        loadingText.anchor.set(0.5);
+        loadingText.x = LEADERBOARD_WIDTH / 2;
+        loadingText.y = SCROLL_AREA_HEIGHT / 2; // Center vertically in visible area
+        scrollContentContainer.addChild(loadingText); // Add to scroll container initially
 
-        // Create container for leaderboard entries that we'll populate async
-        const entriesContainer = new PIXI.Container();
-        entriesContainer.y = 50;
-        leaderboardContainer.addChild(entriesContainer);
 
         // Get leaderboard data asynchronously
         getLeaderboard().then(leaderboard => {
-            // Remove loading text once we have data
-            leaderboardContainer.removeChild(loadingText);
+            // Remove loading text
+            if (loadingText.parent) {
+                scrollContentContainer.removeChild(loadingText);
+            }
 
-            // Display top 5 entries
-            const topEntries = leaderboard.slice(0, 5);
+            const allEntries = leaderboard; // Use all entries
+            // Calculate min/max container position Y
+            const totalContentHeight = allEntries.length * ROW_HEIGHT;
+            const minY = CONTENT_START_Y + SCROLL_AREA_HEIGHT - totalContentHeight;
+            const maxY = CONTENT_START_Y;
+            this.minScrollContainerY = Math.min(maxY, minY); // If content shorter than view, min is just the start Y
+            this.maxScrollContainerY = maxY;
+            // console.log(`Leaderboard scroll bounds: minY=${this.minScrollContainerY.toFixed(2)}, maxY=${this.maxScrollContainerY.toFixed(2)}, totalContentHeight=${totalContentHeight.toFixed(2)}`);
 
-            if (topEntries.length === 0) {
-                const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
+            if (allEntries.length === 0) {
+                const noScoresText = new PIXI.Text('No scores yet!', {
                     fontFamily: 'Arial',
                     fontSize: 18,
                     fill: 0xCCCCCC,
                     align: 'center'
                 });
-                noScoresText.anchor.set(0.5, 0);
-                noScoresText.x = 200;
-                noScoresText.y = 100;
-                leaderboardContainer.addChild(noScoresText);
+                noScoresText.anchor.set(0.5);
+                noScoresText.x = LEADERBOARD_WIDTH / 2;
+                noScoresText.y = SCROLL_AREA_HEIGHT / 2;
+                scrollContentContainer.addChild(noScoresText); // Add to scroll container
             } else {
-                // Create header row
-                const headerRow = new PIXI.Container();
-                headerRow.y = 50;
-                leaderboardContainer.addChild(headerRow);
-
-                const rankHeader = new PIXI.Text('Rank', {
-                    fontFamily: 'Arial',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    fill: 0xCCCCFF
-                });
-                rankHeader.x = 20;
-                headerRow.addChild(rankHeader);
-
-                const nameHeader = new PIXI.Text('Pilot', {
-                    fontFamily: 'Arial',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    fill: 0xCCCCFF
-                });
-                nameHeader.x = 70;
-                headerRow.addChild(nameHeader);
-
-                const scoreHeader = new PIXI.Text('Score', {
-                    fontFamily: 'Arial',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    fill: 0xCCCCFF
-                });
-                scoreHeader.x = 250;
-                headerRow.addChild(scoreHeader);
-
-                const planetsHeader = new PIXI.Text('Planets', {
-                    fontFamily: 'Arial',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    fill: 0xCCCCFF
-                });
-                planetsHeader.x = 330;
-                headerRow.addChild(planetsHeader);
-
-                // Create entries
-                topEntries.forEach((entry, index) => {
+                // Create and add all entries to the scroll container
+                allEntries.forEach((entry, index) => {
                     const row = new PIXI.Container();
-                    row.y = 80 + index * 30;
-                    leaderboardContainer.addChild(row);
+                    // Position rows relative to the scrollContentContainer
+                    row.y = index * ROW_HEIGHT;
+                    scrollContentContainer.addChild(row);
 
-                    const rankText = new PIXI.Text(`${index + 1}`, {
-                        fontFamily: 'Arial',
-                        fontSize: 16,
-                        fill: 0xFFFFFF
-                    });
+                    const rankText = new PIXI.Text(`${index + 1}`, { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
                     rankText.x = 20;
                     row.addChild(rankText);
 
-                    const nameText = new PIXI.Text(entry.username, {
-                        fontFamily: 'Arial',
-                        fontSize: 16,
-                        fill: 0xFFFFFF
-                    });
+                    const nameText = new PIXI.Text(entry.username, { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
                     nameText.x = 70;
                     // Truncate name if too long
-                    if (nameText.width > 170) {
-                        nameText.text = nameText.text.substring(0, 12) + '...';
+                    if (nameText.width > 170) { // Adjust width check if needed
+                        nameText.text = nameText.text.substring(0, 15) + '...'; // Allow slightly more chars
                     }
                     row.addChild(nameText);
 
-                    const scoreText = new PIXI.Text(entry.score.toString(), {
-                        fontFamily: 'Arial',
-                        fontSize: 16,
-                        fill: 0xFFFFFF
-                    });
+                    const scoreText = new PIXI.Text(entry.score.toString(), { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
                     scoreText.x = 250;
                     row.addChild(scoreText);
 
-                    const planetsText = new PIXI.Text(entry.planetsVisited.toString(), {
-                        fontFamily: 'Arial',
-                        fontSize: 16,
-                        fill: 0xFFFFFF
-                    });
+                    const planetsText = new PIXI.Text(entry.planetsVisited.toString(), { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
                     planetsText.x = 330;
                     row.addChild(planetsText);
                 });
             }
         }).catch(error => {
             console.error('Error loading leaderboard:', error);
-            loadingText.text = 'Error loading leaderboard';
+            if (loadingText.parent) {
+                loadingText.text = 'Error loading leaderboard';
+                loadingText.style.fill = 0xFF8888; // Make error red
+            } else {
+                // If loading text was already removed, add a new error text
+                const errorText = new PIXI.Text('Error loading', {
+                    fontFamily: 'Arial',
+                    fontSize: 18,
+                    fill: 0xFF8888,
+                    align: 'center'
+                });
+                errorText.anchor.set(0.5);
+                errorText.x = LEADERBOARD_WIDTH / 2;
+                errorText.y = SCROLL_AREA_HEIGHT / 2;
+                scrollContentContainer.addChild(errorText);
+            }
         });
+
+        // Add scroll listener to the background graphic
+        leaderboardBg.addEventListener('wheel', this.handleLeaderboardScroll.bind(this));
     }
+
+    // --- Add scroll handler method ---
+    handleLeaderboardScroll(event) {
+        // Check if ready for scrolling
+        if (!this.leaderboardScrollContent || typeof this.minScrollContainerY !== 'number' || typeof this.maxScrollContainerY !== 'number') {
+            // console.log('Leaderboard not ready for scrolling or bounds not set.');
+            return;
+        }
+
+        // Determine scroll amount
+        const scrollAmount = event.deltaY;
+        const currentY = this.leaderboardScrollContent.position.y;
+
+        // Calculate the potential new Y position
+        let newY = currentY - scrollAmount;
+
+        // Log values before clamping
+        // console.log(`Scroll: deltaY=${scrollAmount.toFixed(2)}, currentY=${currentY.toFixed(2)}, potential newY=${newY.toFixed(2)}, minContainerY=${this.minScrollContainerY.toFixed(2)}, maxContainerY=${this.maxScrollContainerY.toFixed(2)}`);
+
+        // Clamp the position within calculated bounds
+        const clampedY = Math.max(this.minScrollContainerY, Math.min(this.maxScrollContainerY, newY));
+
+        // Log clamped value
+        // console.log(`Clamped Y: ${clampedY.toFixed(2)}`);
+
+        // Apply the new position only if it changed
+        if (clampedY !== currentY) {
+            this.leaderboardScrollContent.position.y = clampedY;
+        }
+    }
+    // --- End scroll handler ---
 
     setupKeyboardInput() {
         // Add key event listeners

@@ -10,10 +10,8 @@ class LeaderboardEntry {
     }
 }
 
-// API URL - adjust this to match your deployment environment
-const API_URL = window.location.hostname.includes('localhost')
-    ? 'http://localhost:3000/api/leaderboard'
-    : 'https://cjo0bfidl9.execute-api.eu-central-1.amazonaws.com/prod/api/leaderboard';
+// API URL - Always use the AWS production endpoint
+const API_URL = 'https://cjo0bfidl9.execute-api.eu-central-1.amazonaws.com/prod/api/leaderboard';
 
 // Get username from localStorage or generate a random one
 function getUsername() {
@@ -45,7 +43,7 @@ const CACHE_DURATION = 60000; // 1 minute cache
 // Save a new leaderboard entry
 async function saveLeaderboardEntry(username, score, planetsVisited) {
     try {
-        console.log('Attempting to save score to API:', { username, score, planetsVisited });
+        // console.log('Attempting to save score to API:', { username, score, planetsVisited });
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -58,7 +56,7 @@ async function saveLeaderboardEntry(username, score, planetsVisited) {
             })
         });
 
-        console.log('API Response status:', response.status);
+        // console.log('API Response status:', response.status);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -67,7 +65,7 @@ async function saveLeaderboardEntry(username, score, planetsVisited) {
         }
 
         const data = await response.json();
-        console.log('Successfully saved to API, response:', data);
+        // console.log('Successfully saved to API, response:', data);
 
         // Invalidate cache
         leaderboardCache = null;
@@ -76,7 +74,7 @@ async function saveLeaderboardEntry(username, score, planetsVisited) {
         return data.rank;
     } catch (error) {
         console.error('Error saving to leaderboard:', error);
-        console.warn('Falling back to localStorage for score saving');
+        // console.warn('Falling back to localStorage for score saving');
 
         // Fallback to local storage if server is unavailable
         return saveLocalLeaderboardEntry(username, score, planetsVisited);
@@ -112,14 +110,14 @@ async function getLeaderboard() {
 
     // Return cached data if it's still valid
     if (leaderboardCache && (now - lastFetchTime < CACHE_DURATION)) {
-        console.log('Returning cached leaderboard data');
+        // console.log('Returning cached leaderboard data');
         return leaderboardCache;
     }
 
     try {
-        console.log('Fetching leaderboard from API:', API_URL);
+        // console.log('Fetching leaderboard from API:', API_URL);
         const response = await fetch(API_URL);
-        console.log('API Response status:', response.status);
+        // console.log('API Response status:', response.status);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -128,7 +126,7 @@ async function getLeaderboard() {
         }
 
         const data = await response.json();
-        console.log('API leaderboard data received:', data);
+        // console.log('API leaderboard data received:', data);
 
         // Update cache
         leaderboardCache = data;
@@ -137,7 +135,7 @@ async function getLeaderboard() {
         return data;
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
-        console.warn('Falling back to localStorage for leaderboard data');
+        // console.warn('Falling back to localStorage for leaderboard data');
 
         // Fallback to local storage if server is unavailable
         return getLocalLeaderboard();
@@ -168,16 +166,46 @@ function clearLeaderboard() {
 // Format the leaderboard as HTML
 function formatLeaderboardHtml() {
     // We'll get the leaderboard asynchronously and update the DOM
-    const loadingHtml = '<p>Loading leaderboard data...</p>';
+    // console.log("formatLeaderboardHtml called");
 
     // Start fetching the data
     getLeaderboard().then(leaderboard => {
-        const leaderboardElement = document.querySelector('.leaderboard-container');
-        if (!leaderboardElement) return;
+        // console.log("getLeaderboard resolved successfully.");
+        // Determine the correct container
+        const orientationMsg = document.getElementById('orientation-message');
+        let leaderboardElement;
 
-        if (leaderboard.length === 0) {
+        if (orientationMsg && window.getComputedStyle(orientationMsg).display !== 'none') {
+            // We are in portrait mode, target the specific portrait container
+            // console.log("Portrait mode detected. Targeting #portrait-leaderboard");
+            leaderboardElement = document.getElementById('portrait-leaderboard');
+        } else {
+            // Assume landscape/desktop mode, use the original target (or a designated game UI container)
+            // console.log("Landscape/Desktop mode detected. Targeting .leaderboard-container");
+            // NOTE: We might need to ensure '.leaderboard-container' exists and is visible in the main game UI.
+            leaderboardElement = document.querySelector('.leaderboard-container');
+        }
+
+        if (!leaderboardElement) {
+            // console.error("Target leaderboard container not found for the current view.");
+            // If .leaderboard-container is null in landscape, we might need a different selector,
+            // e.g., document.getElementById('game-leaderboard-ui') if such an ID exists.
+            return; // Exit if we can't find where to put the leaderboard
+        }
+
+        if (!leaderboard || leaderboard.length === 0) {
+            // console.log("Leaderboard data is empty. Displaying 'No scores' message.");
             leaderboardElement.innerHTML = '<p>No scores yet. You could be the first!</p>';
             return;
+        }
+
+        // console.log("Building leaderboard HTML.");
+
+        // Determine which data to display (top 5 for portrait)
+        let displayLeaderboard = leaderboard;
+        if (orientationMsg && window.getComputedStyle(orientationMsg).display !== 'none') {
+            // console.log("Portrait mode: Slicing leaderboard to top 5");
+            displayLeaderboard = leaderboard.slice(0, 5);
         }
 
         let html = `
@@ -193,9 +221,10 @@ function formatLeaderboardHtml() {
                 <tbody>
         `;
 
-        leaderboard.forEach((entry, index) => {
-            const date = new Date(entry.date);
-            const dateStr = date.toLocaleDateString();
+        // Use the potentially sliced array for iteration
+        displayLeaderboard.forEach((entry, index) => {
+            // const date = new Date(entry.date); // Date not used in current display
+            // const dateStr = date.toLocaleDateString();
 
             html += `
                 <tr>
@@ -212,10 +241,28 @@ function formatLeaderboardHtml() {
             </table>
         `;
 
+        // console.log("Updating leaderboardElement innerHTML.");
         leaderboardElement.innerHTML = html;
+    }).catch(error => {
+        // Also handle potential errors during the fetch itself
+        console.error("Error caught in getLeaderboard promise:", error); // Log the specific error
+        const orientationMsg = document.getElementById('orientation-message');
+        let errorElement;
+        if (orientationMsg && window.getComputedStyle(orientationMsg).display !== 'none') {
+            // console.log("Error occurred in Portrait mode. Targeting #portrait-leaderboard for error message.");
+            errorElement = document.getElementById('portrait-leaderboard');
+        } else {
+            // console.log("Error occurred in Landscape/Desktop mode. Targeting .leaderboard-container for error message.");
+            errorElement = document.querySelector('.leaderboard-container');
+        }
+        if (errorElement) {
+            // console.log("Displaying error message in target element.");
+            // SIMPLIFIED: Just show a generic error message for now.
+            errorElement.innerHTML = '<p style="color: orange;">Could not load leaderboard data. Please check connection or try again later.</p>';
+        } else {
+            console.error("Could not find errorElement to display the error message.");
+        }
     });
-
-    return loadingHtml;
 }
 
 // Get the player's personal best

@@ -1434,41 +1434,53 @@ class Game {
             this.sounds.explosion.play();
         }
 
-        // Save the score to the leaderboard with username and planets visited
-        saveLeaderboardEntry(this.username, this.score, this.maxPlanetsVisited)
-            .then(rank => {
-                // Update the game over text with the leaderboard rank
-                let updatedText = this.messageText.text.replace('Saving to leaderboard...\n', 'Score saved to leaderboard!\n');
+        // --- Leaderboard Saving Logic --- 
+        if (this.score > 0) {
+            // Save the score to the leaderboard with username and planets visited
+            saveLeaderboardEntry(this.username, this.score, this.maxPlanetsVisited)
+                .then(rank => {
+                    // Update the game over text with the leaderboard rank
+                    let updatedText = this.messageText.text.replace('Saving to leaderboard...\n', 'Score saved to leaderboard!\n');
 
-                // Add leaderboard rank message based on rank
-                const clickTapIndex = updatedText.indexOf('Click/Tap');
-                if (clickTapIndex !== -1) {
-                    // If rank is 0, it means the score was saved but not in top 10
-                    const rankMessage = rank > 0
-                        ? `LEADERBOARD RANK: #${rank}\n\n`
-                        : `Score not in top 10 yet\n\n`;
+                    // Add leaderboard rank message based on rank
+                    const clickTapIndex = updatedText.indexOf('Click/Tap');
+                    if (clickTapIndex !== -1) {
+                        // If rank is 0, it means the score was saved but not in top 10
+                        const rankMessage = rank > 0
+                            ? `LEADERBOARD RANK: #${rank}\n\n`
+                            : `Score not in top 10 yet\n\n`;
 
-                    updatedText = updatedText.slice(0, clickTapIndex) +
-                        rankMessage +
-                        updatedText.slice(clickTapIndex);
-                }
+                        updatedText = updatedText.slice(0, clickTapIndex) +
+                            rankMessage +
+                            updatedText.slice(clickTapIndex);
+                    }
 
-                this.messageText.text = updatedText;
+                    this.messageText.text = updatedText;
 
-                // Add leaderboard to game over screen
-                this.displayLeaderboardAfterGameOver();
-            })
-            .catch(error => {
-                console.error('Error saving to leaderboard:', error);
-                // Update text to show error
-                this.messageText.text = this.messageText.text.replace(
-                    'Saving to leaderboard...\n',
-                    'Error saving to leaderboard\n'
-                );
+                    // Add leaderboard to game over screen
+                    this.displayLeaderboardAfterGameOver();
+                })
+                .catch(error => {
+                    console.error('Error saving to leaderboard:', error);
+                    // Update text to show error
+                    this.messageText.text = this.messageText.text.replace(
+                        'Saving to leaderboard...\n',
+                        'Error saving to leaderboard\n'
+                    );
 
-                // Still show leaderboard
-                this.displayLeaderboardAfterGameOver();
-            });
+                    // Still show leaderboard
+                    this.displayLeaderboardAfterGameOver();
+                });
+        } else {
+            // Score is 0, don't save
+            this.messageText.text = this.messageText.text.replace(
+                'Saving to leaderboard...\n',
+                'Not worth saving :/\n'
+            );
+            // Still display leaderboard even if score is 0
+            this.displayLeaderboardAfterGameOver();
+        }
+        // --- End Leaderboard Saving Logic ---
 
         // Add click/tap listener to restart the game
         this.setupGameOverClickListener();

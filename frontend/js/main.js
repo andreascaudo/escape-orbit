@@ -24,20 +24,20 @@ document.addEventListener('DOMContentLoaded', () => {
         autoDensity: true,
         antialias: true
     });
-    console.log('PixiJS app created');
+    // console.log('PixiJS app created');
     document.getElementById('game-container').appendChild(app.view);
 
     // --- Set initial visibility based on orientation ---
     // Don't fully initialize game logic yet, just manage visibility
     const gameContainer = document.getElementById('game-container');
     if (isMobile && window.innerHeight > window.innerWidth) {
-        console.log('Initially loading in portrait mode, hiding game container');
+        // console.log('Initially loading in portrait mode, hiding game container');
         if (gameContainer) {
             gameContainer.style.visibility = 'hidden';
             gameContainer.style.position = 'absolute'; // Keep position absolute when hidden
         }
     } else {
-        console.log('Initially loading in landscape or desktop, showing game container');
+        // console.log('Initially loading in landscape or desktop, showing game container');
         if (gameContainer) {
             gameContainer.style.visibility = 'visible';
             gameContainer.style.position = 'relative'; // Use relative when visible
@@ -62,11 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeGameLogic() {
     // Prevent running more than once
     if (gameLogicInitialized) {
-        console.log('Game logic already initialized, skipping.');
+        // console.log('Game logic already initialized, skipping.');
         return;
     }
     gameLogicInitialized = true;
-    console.log('Initializing game logic...');
+    // console.log('Initializing game logic...');
 
     // Get current username
     let currentUsername = getUsername();
@@ -76,12 +76,12 @@ function initializeGameLogic() {
         currentUsername = username;
         // Create and initialize game AFTER username is entered
         game = new Game(app, username);
-        console.log('Game initialized with username:', username);
+        // console.log('Game initialized with username:', username);
         window.game = game; // Make game instance globally accessible
         setTimeout(ensureGameViewCentered, 100); // Recenter after game creation
     });
 
-    console.log('Username screen created.');
+    // console.log('Username screen created.');
     // Recenter after username screen setup
     ensureGameViewCentered();
     setTimeout(ensureGameViewCentered, 100);
@@ -100,14 +100,14 @@ function checkOrientation() {
 
     if (isMobile && window.innerHeight > window.innerWidth) {
         // Portrait mode on Mobile
-        console.log('checkOrientation: Portrait mode detected (Mobile)');
+        // console.log('checkOrientation: Portrait mode detected (Mobile)');
         orientationMessage.style.display = 'flex';
         gameContainer.style.visibility = 'hidden';
         gameContainer.style.position = 'absolute'; // Ensure it's absolute when hidden
         loadPortraitLeaderboard(); // Load HTML leaderboard
     } else {
         // Landscape mode (Mobile/Desktop) or Desktop
-        console.log('checkOrientation: Landscape or Desktop detected');
+        // console.log('checkOrientation: Landscape or Desktop detected');
         orientationMessage.style.display = 'none';
         gameContainer.style.visibility = 'visible';
         gameContainer.style.position = 'relative'; // Ensure it's relative when visible
@@ -128,7 +128,7 @@ function checkOrientation() {
 
 // --- Function to handle orientation changes ---
 function handleOrientationChange() {
-    console.log('handleOrientationChange triggered');
+    // console.log('handleOrientationChange triggered');
 
     // Clear previous HTML leaderboard content when rotating (might not be needed if checkOrientation handles it)
     const leaderboardContainer = document.getElementById('portrait-leaderboard');
@@ -151,9 +151,9 @@ function handleOrientationChange() {
 }
 
 function handleResize() {
-    console.log('handleResize triggered');
+    // console.log('handleResize triggered');
     if (!app) {
-        console.log('Resize called before PIXI app initialized, skipping.');
+        // console.log('Resize called before PIXI app initialized, skipping.');
         return;
     }
 
@@ -165,13 +165,13 @@ function handleResize() {
     if (gameContainer) {
         gameContainer.style.width = newWidth + 'px';
         gameContainer.style.height = newHeight + 'px';
-        console.log(`Set #game-container dimensions to: ${newWidth}x${newHeight}`);
+        // console.log(`Set #game-container dimensions to: ${newWidth}x${newHeight}`);
     }
     // --- End container size ---
 
     // Resize the app renderer
     app.renderer.resize(newWidth, newHeight);
-    console.log(`Resized PIXI app to: ${newWidth}x${newHeight}`);
+    // console.log(`Resized PIXI app to: ${newWidth}x${newHeight}`);
 
     // Update constants
     CONSTANTS.SCREEN_WIDTH = newWidth;
@@ -182,7 +182,7 @@ function handleResize() {
 
     // Update UI positions if game exists
     if (gameLogicInitialized && game) {
-        console.log('Updating game UI positions after resize.');
+        // console.log('Updating game UI positions after resize.');
         if (typeof game.handleResize === 'function') {
             game.handleResize(newWidth, newHeight);
         } else {
@@ -230,7 +230,8 @@ function detectMobile() {
 
 function loadPortraitLeaderboard() {
     // Keep your existing implementation - this correctly targets the HTML element
-    console.log('Loading portrait leaderboard (HTML)');
+    // console.log('Loading portrait leaderboard (HTML)');
+    formatLeaderboardHtml(); // Call the function from leaderboard.js
     // ... (rest of the function)
 }
 
@@ -245,7 +246,7 @@ function ensureGameViewCentered() {
 
     if (!gameContainer || !canvas) return;
 
-    console.log('Ensuring game view is centered...');
+    // console.log('Ensuring game view is centered...');
 
     // --- Explicitly set container size ---
     // Also set it here for initial load and orientation changes
@@ -276,12 +277,7 @@ function ensureGameViewCentered() {
     canvas.style.maxHeight = 'none';
     // canvas.style.objectFit = 'contain'; // Ensure this is removed or commented out
 
-    console.log('Game view centering styles applied.');
-
-    // Optional: If game logic is initialized, trigger UI update if needed
-    // if (gameLogicInitialized && window.game && typeof window.game.updateUIPositions === 'function') {
-    //    window.game.updateUIPositions(); // May not be needed if handleResize covers it
-    // }
+    // console.log('Game view centering styles applied.');
 }
 
 // ... (rest of main.js, including checkOrientation, initializeGameLogic etc.)

@@ -80,7 +80,7 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 
 ## Online Leaderboard System
 
-The game includes an online leaderboard system that allows players' scores to be shared across different devices.
+The game includes an online leaderboard system that allows players' scores to be shared across different devices. Only scores greater than zero are submitted to the online leaderboard.
 
 ### Local Development
 - The leaderboard server can run locally on Node.js with Express

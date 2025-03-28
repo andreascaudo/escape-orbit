@@ -18,6 +18,20 @@ class UsernameScreen {
         this.createBackground();
 
         // Create UI elements
+        // Store references to elements for resizing
+        this.title = null;
+        this.subtitle = null;
+        this.inputBg = null;
+        this.inputText = null;
+        this.cursor = null;
+        this.randomButton = null;
+        this.randomText = null;
+        this.startButton = null;
+        this.startText = null;
+        this.leaderboardContainer = null;
+        this.leaderboardScrollContent = null;
+        this.cursorInterval = null;
+
         this.createUI();
 
         // Handle keyboard input
@@ -66,8 +80,16 @@ class UsernameScreen {
     }
 
     createUI() {
-        // Create title
-        const title = new PIXI.Text('ESCAPE ORBIT', {
+        this.container.removeChildren(); // Clear previous UI if any (e.g., during resize recreation)
+        this.container.addChild(this.background); // Re-add background
+        this.container.addChild(this.stars); // Re-add stars
+
+        const isMobileLandscape = this.detectMobile() && this.app.screen.width > this.app.screen.height;
+        const screenWidth = this.app.screen.width;
+        const screenHeight = this.app.screen.height;
+
+        // --- Title ---
+        this.title = new PIXI.Text('ESCAPE ORBIT', {
             fontFamily: 'Arial',
             fontSize: 48,
             fontWeight: 'bold',
@@ -77,150 +99,285 @@ class UsernameScreen {
             dropShadowColor: 0x000000,
             dropShadowDistance: 3
         });
-        title.anchor.set(0.5, 0);
-        title.x = this.app.screen.width / 2;
-        title.y = 60;
-        this.container.addChild(title);
+        this.title.anchor.set(0.5, 0.5); // Center anchor for easier vertical positioning
+        this.title.x = screenWidth / 2;
+        // Adjust Y: Lower on desktop (more space), higher on mobile landscape
+        this.title.y = isMobileLandscape ? screenHeight * 0.20 : 80;
+        this.container.addChild(this.title);
 
-        // Create subtitle
-        const subtitle = new PIXI.Text('What\'s your callsign, pilot?', {
-            fontFamily: 'Arial',
-            fontSize: 24,
-            fill: 0xCCCCFF,
-            align: 'center'
-        });
-        subtitle.anchor.set(0.5, 0);
-        subtitle.x = this.app.screen.width / 2;
-        subtitle.y = 130;
-        this.container.addChild(subtitle);
+        // --- Subtitle (Desktop only) ---
+        if (!isMobileLandscape) {
+            this.subtitle = new PIXI.Text('What\'s your callsign, pilot?', {
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fill: 0xCCCCFF,
+                align: 'center'
+            });
+            this.subtitle.anchor.set(0.5, 0);
+            this.subtitle.x = screenWidth / 2;
+            this.subtitle.y = this.title.y + 40; // Position below title
+            this.container.addChild(this.subtitle);
+        } else {
+            this.subtitle = null; // Ensure it's null on mobile landscape
+        }
 
-        // Create input box background
-        const inputBg = new PIXI.Graphics();
-        inputBg.beginFill(0x000033);
-        inputBg.lineStyle(2, 0x3355FF);
-        inputBg.drawRoundedRect(0, 0, 400, 50, 10);
-        inputBg.endFill();
-        inputBg.x = this.app.screen.width / 2 - 200;
-        inputBg.y = this.app.screen.height / 2 - 170;
-        this.container.addChild(inputBg);
+        // --- Input Area ---
+        const inputWidth = Math.min(screenWidth * 0.8, 400); // Responsive width
+        const inputHeight = 50;
+        // Adjust Y: Center vertically between title and buttons on mobile landscape, fixed position on desktop
+        const inputY = isMobileLandscape ? screenHeight / 2 - inputHeight / 2 - 30 : screenHeight / 2 - 170;
 
-        // Create input text
+        this.inputBg = new PIXI.Graphics();
+        this.inputBg.beginFill(0x000033);
+        this.inputBg.lineStyle(2, 0x3355FF);
+        this.inputBg.drawRoundedRect(0, 0, inputWidth, inputHeight, 10);
+        this.inputBg.endFill();
+        this.inputBg.x = screenWidth / 2 - inputWidth / 2;
+        this.inputBg.y = inputY;
+        this.container.addChild(this.inputBg);
+
         this.inputText = new PIXI.Text(this.username, {
             fontFamily: 'Arial',
             fontSize: 24,
             fill: 0xFFFFFF,
             align: 'left'
         });
-        this.inputText.x = inputBg.x + 10;
-        this.inputText.y = inputBg.y + 10;
+        // Adjust position slightly for centering
+        this.inputText.x = this.inputBg.x + 15;
+        this.inputText.y = this.inputBg.y + (inputHeight - this.inputText.height) / 2;
         this.container.addChild(this.inputText);
 
-        // Create cursor
         this.cursor = new PIXI.Graphics();
         this.cursor.beginFill(0xFFFFFF);
-        this.cursor.drawRect(0, 0, 2, 30);
+        const cursorHeight = 30;
+        this.cursor.drawRect(0, 0, 2, cursorHeight);
         this.cursor.endFill();
-        this.cursor.x = this.inputText.x + this.inputText.width + 2;
-        this.cursor.y = this.inputText.y;
+        this.cursor.y = this.inputBg.y + (inputHeight - cursorHeight) / 2; // Vertically center cursor
         this.container.addChild(this.cursor);
+        this.updateCursorPosition(); // Initial position
 
+        // Clear previous interval if exists
+        if (this.cursorInterval) clearInterval(this.cursorInterval);
         // Animate cursor blink
         this.cursorVisible = true;
-        setInterval(() => {
+        this.cursorInterval = setInterval(() => {
             this.cursorVisible = !this.cursorVisible;
-            this.cursor.visible = this.cursorVisible;
+            if (this.cursor) this.cursor.visible = this.cursorVisible;
         }, 500);
 
-        // Create random button
-        const randomButton = new PIXI.Graphics();
-        randomButton.beginFill(0x225588);
-        randomButton.lineStyle(2, 0x3355FF);
-        randomButton.drawRoundedRect(0, 0, 200, 40, 10);
-        randomButton.endFill();
-        randomButton.x = this.app.screen.width / 2 - 210;
-        randomButton.y = this.app.screen.height / 2 - 100;
-        this.container.addChild(randomButton);
+        // --- Buttons ---
+        const buttonWidth = Math.min(inputWidth / 2 - 10, 200); // Make buttons fit input width
+        const buttonHeight = 40;
+        const buttonY = inputY + inputHeight + 20; // Position below input box
+        const buttonSpacing = 10;
 
-        const randomText = new PIXI.Text('Random Name', {
+        // Random Button
+        this.randomButton = new PIXI.Graphics();
+        this.randomButton.beginFill(0x225588);
+        this.randomButton.lineStyle(2, 0x3355FF);
+        this.randomButton.drawRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+        this.randomButton.endFill();
+        this.randomButton.x = screenWidth / 2 - buttonWidth - buttonSpacing / 2; // Place left
+        this.randomButton.y = buttonY;
+        this.container.addChild(this.randomButton);
+
+        this.randomText = new PIXI.Text('Random', { // Shorter text for smaller buttons
             fontFamily: 'Arial',
-            fontSize: 20,
+            fontSize: buttonWidth < 150 ? 16 : 20, // Adjust font size
             fill: 0xFFFFFF,
             align: 'center'
         });
-        randomText.anchor.set(0.5, 0.5);
-        randomText.x = randomButton.x + 100;
-        randomText.y = randomButton.y + 20;
-        this.container.addChild(randomText);
+        this.randomText.anchor.set(0.5, 0.5);
+        this.randomText.x = this.randomButton.x + buttonWidth / 2;
+        this.randomText.y = this.randomButton.y + buttonHeight / 2;
+        this.container.addChild(this.randomText);
 
-        // Make random button interactive
-        randomButton.eventMode = 'static';
-        randomButton.cursor = 'pointer';
-        randomButton.on('pointerdown', () => {
+        this.randomButton.eventMode = 'static';
+        this.randomButton.cursor = 'pointer';
+        this.randomButton.on('pointerdown', () => {
             this.username = generateRandomUsername();
             this.inputText.text = this.username;
             this.updateCursorPosition();
         });
 
-        // Create start button
-        const startButton = new PIXI.Graphics();
-        startButton.beginFill(0x225588);
-        startButton.lineStyle(2, 0x3355FF);
-        startButton.drawRoundedRect(0, 0, 200, 40, 10);
-        startButton.endFill();
-        startButton.x = this.app.screen.width / 2 + 10;
-        startButton.y = this.app.screen.height / 2 - 100;
-        this.container.addChild(startButton);
+        // Start Button
+        this.startButton = new PIXI.Graphics();
+        this.startButton.beginFill(0x225588);
+        this.startButton.lineStyle(2, 0x3355FF);
+        this.startButton.drawRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+        this.startButton.endFill();
+        this.startButton.x = screenWidth / 2 + buttonSpacing / 2; // Place right
+        this.startButton.y = buttonY;
+        this.container.addChild(this.startButton);
 
-        const startText = new PIXI.Text('Start Game', {
+        this.startText = new PIXI.Text('Start', { // Shorter text
             fontFamily: 'Arial',
-            fontSize: 20,
+            fontSize: buttonWidth < 150 ? 16 : 20, // Adjust font size
             fill: 0xFFFFFF,
             align: 'center'
         });
-        startText.anchor.set(0.5, 0.5);
-        startText.x = startButton.x + 100;
-        startText.y = startButton.y + 20;
-        this.container.addChild(startText);
+        this.startText.anchor.set(0.5, 0.5);
+        this.startText.x = this.startButton.x + buttonWidth / 2;
+        this.startText.y = this.startButton.y + buttonHeight / 2;
+        this.container.addChild(this.startText);
 
-        // Make start button interactive
-        startButton.eventMode = 'static';
-        startButton.cursor = 'pointer';
-        startButton.on('pointerdown', () => this.completeUsernameEntry());
+        this.startButton.eventMode = 'static';
+        this.startButton.cursor = 'pointer';
+        this.startButton.on('pointerdown', () => this.completeUsernameEntry());
 
-        // Create leaderboard display
-        this.createLeaderboardDisplay();
+        // --- Leaderboard (Desktop only) ---
+        if (!isMobileLandscape) {
+            this.createLeaderboardDisplay(); // This function should store container in this.leaderboardContainer
+        } else {
+            this.leaderboardContainer = null; // Ensure null on mobile landscape
+            this.leaderboardScrollContent = null; // Ensure null
+        }
     }
 
     handleResize(newWidth, newHeight) {
-        // Reposition elements based on new screen size
+        // Re-create background (simpler than resizing complex graphics)
         if (this.background) {
             this.background.clear();
             this.background.beginFill(0x000022);
             this.background.drawRect(0, 0, newWidth, newHeight);
             this.background.endFill();
         }
-        // Reposition title, subtitle, input box, buttons etc. based on newWidth/newHeight
-        // Example:
-        // if (this.title) { this.title.x = newWidth / 2; }
-        // if (this.inputBg) { this.inputBg.x = newWidth / 2 - 200; this.inputBg.y = newHeight / 2 - 25; }
-        // ... and so on for all UI elements ...
-        // Don't forget to update cursor position relative to inputText
-        // this.updateCursorPosition();
+        // Note: Star positions aren't updated here, might need adjustment if crucial
 
-        // Re-create/reposition leaderboard if it's part of this screen (only for desktop)
-        // if (!this.detectMobile() && this.leaderboardContainer) {
-        //     // Remove old one
-        //     this.container.removeChild(this.leaderboardContainer);
-        //     // Recreate or reposition
-        //     this.createLeaderboardDisplay(); // Assuming this function correctly uses current app dimensions
-        // }
+        // --- Re-calculate layout based on new dimensions ---
+        const isMobileLandscape = this.detectMobile() && newWidth > newHeight;
+
+        // --- Title ---
+        if (this.title) {
+            this.title.x = newWidth / 2;
+            this.title.y = isMobileLandscape ? newHeight * 0.20 : 80;
+        }
+
+        // --- Subtitle ---
+        if (!isMobileLandscape) {
+            // Create subtitle if it doesn't exist (transition from mobile landscape)
+            if (!this.subtitle && this.title) {
+                this.subtitle = new PIXI.Text('What\'s your callsign, pilot?', { /* styles */ });
+                this.subtitle.anchor.set(0.5, 0);
+                this.container.addChild(this.subtitle);
+            }
+            if (this.subtitle && this.title) {
+                this.subtitle.x = newWidth / 2;
+                this.subtitle.y = this.title.y + 40; // Position below title
+            }
+        } else {
+            // Remove subtitle if it exists (transition to mobile landscape)
+            if (this.subtitle) {
+                this.container.removeChild(this.subtitle);
+                this.subtitle = null;
+            }
+        }
+
+        // --- Input Area ---
+        const inputWidth = Math.min(newWidth * 0.8, 400);
+        const inputHeight = 50;
+        const inputY = isMobileLandscape ? newHeight / 2 - inputHeight / 2 - 30 : newHeight / 2 - 170;
+
+        if (this.inputBg) {
+            this.inputBg.clear(); // Required before redrawing
+            this.inputBg.beginFill(0x000033);
+            this.inputBg.lineStyle(2, 0x3355FF);
+            this.inputBg.drawRoundedRect(0, 0, inputWidth, inputHeight, 10);
+            this.inputBg.endFill();
+            this.inputBg.x = newWidth / 2 - inputWidth / 2;
+            this.inputBg.y = inputY;
+        }
+        if (this.inputText) {
+            this.inputText.x = this.inputBg.x + 15;
+            this.inputText.y = this.inputBg.y + (inputHeight - this.inputText.height) / 2;
+        }
+        if (this.cursor) {
+            const cursorHeight = 30;
+            this.cursor.y = this.inputBg.y + (inputHeight - cursorHeight) / 2;
+            this.updateCursorPosition(); // Recalculate X based on text
+        }
+
+        // --- Buttons ---
+        const buttonWidth = Math.min(inputWidth / 2 - 10, 200);
+        const buttonHeight = 40;
+        const buttonY = inputY + inputHeight + 20;
+        const buttonSpacing = 10;
+        const buttonFontSize = buttonWidth < 150 ? 16 : 20;
+
+        if (this.randomButton) {
+            this.randomButton.clear(); // Redraw for new size/position
+            this.randomButton.beginFill(0x225588);
+            this.randomButton.lineStyle(2, 0x3355FF);
+            this.randomButton.drawRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+            this.randomButton.endFill();
+            this.randomButton.x = newWidth / 2 - buttonWidth - buttonSpacing / 2;
+            this.randomButton.y = buttonY;
+        }
+        if (this.randomText) {
+            this.randomText.style.fontSize = buttonFontSize; // Update font size
+            this.randomText.x = this.randomButton.x + buttonWidth / 2;
+            this.randomText.y = this.randomButton.y + buttonHeight / 2;
+        }
+        if (this.startButton) {
+            this.startButton.clear(); // Redraw for new size/position
+            this.startButton.beginFill(0x225588);
+            this.startButton.lineStyle(2, 0x3355FF);
+            this.startButton.drawRoundedRect(0, 0, buttonWidth, buttonHeight, 10);
+            this.startButton.endFill();
+            this.startButton.x = newWidth / 2 + buttonSpacing / 2;
+            this.startButton.y = buttonY;
+        }
+        if (this.startText) {
+            this.startText.style.fontSize = buttonFontSize; // Update font size
+            this.startText.x = this.startButton.x + buttonWidth / 2;
+            this.startText.y = this.startButton.y + buttonHeight / 2;
+        }
+
+        // --- Leaderboard ---
+        // Remove leaderboard if we are now mobile landscape
+        if (isMobileLandscape && this.leaderboardContainer) {
+            if (this.leaderboardScrollContent && this.leaderboardScrollContent.mask) {
+                this.leaderboardContainer.removeChild(this.leaderboardScrollContent.mask); // Remove mask first
+            }
+            this.container.removeChild(this.leaderboardContainer);
+            this.leaderboardContainer = null;
+            this.leaderboardScrollContent = null;
+            // Detach scroll listener if needed - find where it's attached
+            // Assuming it's attached to leaderboardBg within createLeaderboardDisplay, need cleanup there or store reference to bg
+        }
+        // Recreate leaderboard if we are now desktop AND it doesn't exist
+        else if (!isMobileLandscape && !this.leaderboardContainer) {
+            this.createLeaderboardDisplay(); // Recreate it for desktop view
+        }
+        // Reposition leaderboard if it exists and we are on desktop
+        else if (!isMobileLandscape && this.leaderboardContainer) {
+            const LEADERBOARD_WIDTH = 400; // Consider making this a class constant
+            this.leaderboardContainer.x = newWidth / 2 - LEADERBOARD_WIDTH / 2;
+            this.leaderboardContainer.y = newHeight / 2 + 100; // Adjust Y pos if needed
+
+            // Re-applying/updating mask might be necessary if its position/size depends on screenHeight
+            if (this.leaderboardScrollContent && this.leaderboardScrollContent.mask) {
+                const mask = this.leaderboardScrollContent.mask;
+                const ROW_HEIGHT = 30; // Class constant?
+                const VISIBLE_ROWS = 5; // Class constant?
+                const SCROLL_AREA_HEIGHT = VISIBLE_ROWS * ROW_HEIGHT;
+                const HEADER_HEIGHT = 30; // Class constant?
+                const CONTENT_START_Y = 40 + HEADER_HEIGHT; // Relative to leaderboardContainer
+                mask.clear().beginFill(0xff0000, 0.5).drawRect(0, CONTENT_START_Y, LEADERBOARD_WIDTH, SCROLL_AREA_HEIGHT).endFill();
+                // Ensure mask is still child of leaderboardContainer - it should be
+            }
+            // Re-calculate scroll bounds if content height changes (unlikely on resize alone)
+            // this.calculateScrollBounds();
+        }
     }
 
     createLeaderboardDisplay() {
-        // Check if on mobile device, and skip creating leaderboard if so
-        const isMobile = this.detectMobile();
-        if (isMobile) {
-            // On mobile, we'll show the leaderboard on the game instructions page instead
+        // Check if on mobile device (including landscape), and skip creating leaderboard if so
+        // Mobile leaderboard is shown in portrait HTML view
+        if (this.detectMobile()) {
+            // console.log("Skipping PIXI leaderboard creation on mobile device.");
+            this.leaderboardContainer = null;
+            this.leaderboardScrollContent = null;
             return;
         }
 
@@ -234,11 +391,11 @@ class UsernameScreen {
         // --- End Constants ---
 
         // Create main leaderboard container
-        const leaderboardContainer = new PIXI.Container();
+        this.leaderboardContainer = new PIXI.Container(); // Assign to instance variable
         // Positioning adjusted slightly to accommodate potential scrollbar later if needed
-        leaderboardContainer.x = this.app.screen.width / 2 - LEADERBOARD_WIDTH / 2;
-        leaderboardContainer.y = this.app.screen.height / 2 + 100; // Moved up slightly
-        this.container.addChild(leaderboardContainer);
+        this.leaderboardContainer.x = this.app.screen.width / 2 - LEADERBOARD_WIDTH / 2;
+        this.leaderboardContainer.y = this.app.screen.height / 2 + 100; // Moved up slightly
+        this.container.addChild(this.leaderboardContainer);
 
         // Create leaderboard title
         const leaderboardTitle = new PIXI.Text('TOP PILOTS', {
@@ -251,7 +408,7 @@ class UsernameScreen {
         leaderboardTitle.anchor.set(0.5, -0.25);
         leaderboardTitle.x = LEADERBOARD_WIDTH / 2;
         leaderboardTitle.y = 0;
-        leaderboardContainer.addChild(leaderboardTitle);
+        this.leaderboardContainer.addChild(leaderboardTitle);
 
         // Create leaderboard background (acts as scroll trigger area)
         // Adjusted height to include title and scroll area
@@ -263,12 +420,12 @@ class UsernameScreen {
         leaderboardBg.endFill();
         leaderboardBg.eventMode = 'static'; // Make it interactive for scroll events
         leaderboardBg.cursor = 'default'; // Keep default cursor
-        leaderboardContainer.addChild(leaderboardBg);
+        this.leaderboardContainer.addChild(leaderboardBg);
 
         // --- Header Row ---
         const headerRow = new PIXI.Container();
         headerRow.y = 40; // Below title
-        leaderboardContainer.addChild(headerRow);
+        this.leaderboardContainer.addChild(headerRow);
 
         const rankHeader = new PIXI.Text('Rank', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
         rankHeader.x = 20;
@@ -290,20 +447,20 @@ class UsernameScreen {
 
         // --- Scrollable Content Area ---
         // Container for all entries (will be masked and moved)
-        const scrollContentContainer = new PIXI.Container();
-        scrollContentContainer.y = CONTENT_START_Y; // Position below header
-        leaderboardContainer.addChild(scrollContentContainer);
-        this.leaderboardScrollContent = scrollContentContainer; // Store reference for scrolling
+        this.scrollContentContainer = new PIXI.Container(); // Assign to instance var THIS LINE CHANGED
+        this.scrollContentContainer.y = CONTENT_START_Y; // Position below header
+        this.leaderboardContainer.addChild(this.scrollContentContainer); // Add to correct container
+        this.leaderboardScrollContent = this.scrollContentContainer; // Store reference for scrolling (keep compatibility)
 
         // Create the mask graphic
         const scrollMask = new PIXI.Graphics();
         scrollMask.beginFill(0xff0000, 0.5); // Color/alpha doesn't matter for mask
         scrollMask.drawRect(0, CONTENT_START_Y, LEADERBOARD_WIDTH, SCROLL_AREA_HEIGHT); // Position and size of visible area
         scrollMask.endFill();
-        leaderboardContainer.addChild(scrollMask); // Add mask to the main container
+        this.leaderboardContainer.addChild(scrollMask); // Add mask to the main container
 
         // Apply the mask
-        scrollContentContainer.mask = scrollMask;
+        this.scrollContentContainer.mask = scrollMask;
         // --- End Scrollable Content Area Setup ---
 
 
@@ -317,14 +474,14 @@ class UsernameScreen {
         loadingText.anchor.set(0.5);
         loadingText.x = LEADERBOARD_WIDTH / 2;
         loadingText.y = SCROLL_AREA_HEIGHT / 2; // Center vertically in visible area
-        scrollContentContainer.addChild(loadingText); // Add to scroll container initially
+        this.scrollContentContainer.addChild(loadingText); // Add to scroll container initially
 
 
         // Get leaderboard data asynchronously
         getLeaderboard().then(leaderboard => {
             // Remove loading text
             if (loadingText.parent) {
-                scrollContentContainer.removeChild(loadingText);
+                this.scrollContentContainer.removeChild(loadingText);
             }
 
             const allEntries = leaderboard; // Use all entries
@@ -346,14 +503,14 @@ class UsernameScreen {
                 noScoresText.anchor.set(0.5);
                 noScoresText.x = LEADERBOARD_WIDTH / 2;
                 noScoresText.y = SCROLL_AREA_HEIGHT / 2;
-                scrollContentContainer.addChild(noScoresText); // Add to scroll container
+                this.scrollContentContainer.addChild(noScoresText); // Add to scroll container
             } else {
                 // Create and add all entries to the scroll container
                 allEntries.forEach((entry, index) => {
                     const row = new PIXI.Container();
                     // Position rows relative to the scrollContentContainer
                     row.y = index * ROW_HEIGHT;
-                    scrollContentContainer.addChild(row);
+                    this.scrollContentContainer.addChild(row);
 
                     const rankText = new PIXI.Text(`${index + 1}`, { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
                     rankText.x = 20;
@@ -392,7 +549,7 @@ class UsernameScreen {
                 errorText.anchor.set(0.5);
                 errorText.x = LEADERBOARD_WIDTH / 2;
                 errorText.y = SCROLL_AREA_HEIGHT / 2;
-                scrollContentContainer.addChild(errorText);
+                this.scrollContentContainer.addChild(errorText);
             }
         });
 
@@ -459,7 +616,9 @@ class UsernameScreen {
     }
 
     updateCursorPosition() {
-        this.cursor.x = this.inputText.x + this.inputText.width + 2;
+        if (this.cursor && this.inputText) { // Check if elements exist
+            this.cursor.x = this.inputText.x + this.inputText.width + 2;
+        }
     }
 
     completeUsernameEntry() {
@@ -477,11 +636,18 @@ class UsernameScreen {
         // Remove event listener
         window.removeEventListener('keydown', this.handleKeyDown.bind(this));
 
-        // Stop animations
+        // Stop animations and intervals
+        if (this.cursorInterval) clearInterval(this.cursorInterval); // Clear interval
         this.app.ticker.remove(this.animateStars, this);
 
-        // Clean up
-        this.app.stage.removeChild(this.container);
+        // Clean up PIXI elements (optional but good practice)
+        this.container.removeChildren(); // Remove all children managed by this screen
+        // Maybe destroy individual complex elements like background/stars if needed
+
+        // Remove main container from stage
+        if (this.container.parent) { // Check if it's still on stage
+            this.container.parent.removeChild(this.container);
+        }
 
         // Call the completion callback with the username
         this.onComplete(this.username);
@@ -494,11 +660,23 @@ class UsernameScreen {
         // Stop ticker
         this.app.ticker.remove(this.animateStars, this);
 
-        // Remove container from stage
-        this.app.stage.removeChild(this.container);
+        // Clear cursor interval
+        if (this.cursorInterval) clearInterval(this.cursorInterval);
 
-        // Call the onComplete callback with the username
-        this.onComplete(this.username);
+        // Remove container from stage if it exists and has a parent
+        if (this.container && this.container.parent) {
+            this.container.parent.removeChild(this.container);
+        }
+
+        // Optional: Explicitly destroy PIXI objects if needed
+        // this.container.destroy({ children: true, texture: true, baseTexture: true });
+
+        // Call the onComplete callback if it hasn't been called (e.g., screen replaced unexpectedly)
+        // Might not be needed depending on game flow
+        // if (this.onComplete) {
+        //     this.onComplete(this.username); // Or maybe null/undefined?
+        //     this.onComplete = null; // Prevent double calls
+        // }
     }
 
     // Detect if the user is on a mobile device

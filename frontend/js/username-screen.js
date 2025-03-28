@@ -181,7 +181,7 @@ class UsernameScreen {
         this.randomButton.y = buttonY;
         this.container.addChild(this.randomButton);
 
-        this.randomText = new PIXI.Text('Random', { // Shorter text for smaller buttons
+        this.randomText = new PIXI.Text('Random Name', { // Shorter text for smaller buttons
             fontFamily: 'Arial',
             fontSize: buttonWidth < 150 ? 16 : 20, // Adjust font size
             fill: 0xFFFFFF,
@@ -210,7 +210,7 @@ class UsernameScreen {
         this.startButton.y = buttonY;
         this.container.addChild(this.startButton);
 
-        this.startText = new PIXI.Text('Start', { // Shorter text
+        this.startText = new PIXI.Text('Start Game', { // Shorter text
             fontFamily: 'Arial',
             fontSize: buttonWidth < 150 ? 16 : 20, // Adjust font size
             fill: 0xFFFFFF,

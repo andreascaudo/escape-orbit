@@ -139,18 +139,6 @@ class UsernameScreen {
         randomButton.endFill();
         randomButton.x = this.app.screen.width / 2 - 210;
         randomButton.y = this.app.screen.height / 2 + 50;
-        this.container.addChild(randomButton);
-
-        const randomText = new PIXI.Text('Random Name', {
-            fontFamily: 'Arial',
-            fontSize: 20,
-            fill: 0xFFFFFF,
-            align: 'center'
-        });
-        randomText.anchor.set(0.5, 0.5);
-        randomText.x = randomButton.x + 100;
-        randomText.y = randomButton.y + 20;
-        this.container.addChild(randomText);
 
         // Make random button interactive
         randomButton.eventMode = 'static';

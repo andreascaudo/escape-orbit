@@ -5,7 +5,7 @@ class UsernameScreen {
         this.app = app;
         this.onComplete = onComplete;
         this.container = new PIXI.Container();
-        this.username = getUsername(); // Get existing username if available
+        this.username = ""; // Get existing username if available
 
         this.init();
     }
@@ -136,7 +136,7 @@ class UsernameScreen {
         this.inputBg.y = inputY;
         this.container.addChild(this.inputBg);
 
-        this.inputText = new PIXI.Text("", {
+        this.inputText = new PIXI.Text(this.username, {
             fontFamily: 'Arial',
             fontSize: 24,
             fill: 0xFFFFFF,

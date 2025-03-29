@@ -171,6 +171,10 @@
                 /* Align content to the top */
                 overflow-y: auto;
                 /* Allow scrolling if content is still too tall */
+                text-align: center;
+                /* Center all text in portrait mode */
+                align-items: center;
+                /* Center items horizontally */
             }
 
             #game-container {
@@ -207,6 +211,10 @@
                 /* Reduce top margin */
                 /* Remove max-height, let parent scroll handle it */
                 /* Remove overflow-y: auto from here */
+                text-align: center;
+                /* Center all text in the div */
+                margin-left: auto;
+                margin-right: auto;
             }
 
             #orientation-message h3 {
@@ -214,6 +222,7 @@
                 /* Smaller section titles */
                 margin-top: 10px;
                 margin-bottom: 5px;
+                text-align: center;
             }
 
             #orientation-message p,
@@ -221,18 +230,22 @@
             #orientation-message ul {
                 font-size: 0.8em;
                 /* Smaller instruction text */
+                text-align: center;
             }
 
             #orientation-message ul {
-                padding-left: 15px;
-                /* Less indent */
+                padding-left: 0;
+                /* Remove indent */
                 margin-top: 3px;
                 margin-bottom: 10px;
+                list-style-position: inside;
+                /* Keep bullets inside for centered alignment */
             }
 
             #orientation-message ul li {
                 margin-bottom: 2px;
                 /* Tighter list items */
+                text-align: center;
             }
 
             /* Leaderboard specific adjustments */
@@ -278,22 +291,22 @@
         <h2>Please rotate your device</h2>
         <p>This game works best in landscape mode</p>
 
-        <div style="margin-top: 20px; text-align: left; max-width: 80%;">
+        <div style="margin-top: 20px; text-align: center; max-width: 90%; margin-left: auto; margin-right: auto;">
             <h3>GAME INSTRUCTIONS:</h3>
             <p><strong>CONTROLS:</strong></p>
-            <ul style="padding-left: 20px;">
+            <ul style="padding-left: 0; list-style-position: inside;">
                 <li>Tap and hold to boost</li>
                 <li>Short tap to enter/exit orbit</li>
             </ul>
             <p><strong>GAMEPLAY:</strong></p>
-            <ul style="padding-left: 20px;">
-                <li>🏴‍☠️ Visit planets by entering orbit</li>
+            <ul style="padding-left: 0; list-style-position: inside;">
+                <li>🏡 Visit planets by entering orbit</li>
                 <li>Collect fuel pods (🛰️) and avoid hazards (☄️)</li>
                 <li>Win by colonizing all planets</li>
             </ul>
 
             <!-- Leaderboard section -->
-            <div style="margin-top: 20px; width: 100%; max-width: 400px;">
+            <div style="margin-top: 20px; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto;">
                 <h3 style="color: #FFDD33; text-align: center; font-size: 24px; margin-bottom: 15px;">⭐ TOP PILOTS ⭐
                 </h3>
                 <div id="portrait-leaderboard"

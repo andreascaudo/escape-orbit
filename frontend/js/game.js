@@ -61,7 +61,6 @@ class Game {
         this.fuelText = null;
         this.scoreText = null;
         this.messageText = null;
-        this.zoomText = null;
         this.planetCountText = null; // Add planet counter text
         this.orbitHelpText = null;
         this.orbitEntryText = null;
@@ -118,55 +117,52 @@ class Game {
 
     createUI() {
         // Create fuel gauge
-        this.fuelText = new PIXI.Text('FUEL: 100%', {
+        this.fuelText = new PIXI.Text('⛽: 100%', {
             fontFamily: 'Arial',
-            fontSize: 16,
+            fontSize: this.isMobile ? 16 : 22,
             fill: 0xFFFFFF
         });
-        this.fuelText.x = 20;
-        this.fuelText.y = 20;
-        this.uiContainer.addChild(this.fuelText);
 
         // Create score display
-        this.scoreText = new PIXI.Text('SCORE: 0', {
+        this.scoreText = new PIXI.Text('🏆: 0', {
             fontFamily: 'Arial',
-            fontSize: 16,
+            fontSize: this.isMobile ? 16 : 22,
             fill: 0xFFFFFF
         });
-        this.scoreText.x = 20;
-        this.scoreText.y = 50;
-        this.uiContainer.addChild(this.scoreText);
-
-        // Create zoom display with correct initial value
-        const zoomPercentage = Math.round(this.zoom * 100);
-        this.zoomText = new PIXI.Text(`ZOOM: ${zoomPercentage}%`, {
-            fontFamily: 'Arial',
-            fontSize: 16,
-            fill: 0xFFFFFF
-        });
-        this.zoomText.x = 20;
-        this.zoomText.y = 80;
-        this.uiContainer.addChild(this.zoomText);
 
         // Create planet counter with more space
-        this.planetCountText = new PIXI.Text('Visited 🪂: 1/8', {
+        this.planetCountText = new PIXI.Text('🪐: 1/8', {
             fontFamily: 'Arial',
-            fontSize: 16,
+            fontSize: this.isMobile ? 16 : 22,
             fill: 0xFFFFFF
         });
-        this.planetCountText.x = 20;
-        this.planetCountText.y = 110;
-        this.uiContainer.addChild(this.planetCountText);
 
-        // Create username display
-        this.usernameText = new PIXI.Text(`PILOT: ${this.username}`, {
-            fontFamily: 'Arial',
-            fontSize: 16,
-            fill: 0xFFDD33
-        });
-        this.usernameText.x = 20;
-        this.usernameText.y = 140;
-        this.uiContainer.addChild(this.usernameText);
+        // Position UI elements based on device type
+        if (this.isMobile) {
+            // On mobile, position at the bottom
+            this.fuelText.x = 20;
+            this.fuelText.y = this.height - 80;
+
+            this.scoreText.x = 20;
+            this.scoreText.y = this.height - 50;
+
+            this.planetCountText.x = 20;
+            this.planetCountText.y = this.height - 20;
+        } else {
+            // On desktop, position at the top left
+            this.fuelText.x = 20;
+            this.fuelText.y = 20;
+
+            this.scoreText.x = 20;
+            this.scoreText.y = 50;
+
+            this.planetCountText.x = 20;
+            this.planetCountText.y = 80;
+        }
+
+        this.uiContainer.addChild(this.fuelText);
+        this.uiContainer.addChild(this.scoreText);
+        this.uiContainer.addChild(this.planetCountText);
 
         // Create boundary warning text
         this.boundaryWarningText = new PIXI.Text('WARNING: Approaching solar system boundary!', {
@@ -189,15 +185,28 @@ class Game {
                 fontSize: 14,
                 fill: 0xAAAAAA
             });
-            zoomInstructions.x = 20;
-            zoomInstructions.y = 165;
+            // Position in bottom-right corner
+            zoomInstructions.anchor.set(1, 1); // Anchor to bottom-right
+            zoomInstructions.x = this.width - 20;
+            zoomInstructions.y = this.height - 20;
             this.uiContainer.addChild(zoomInstructions);
+
+            // Store reference for resizing
+            this.zoomInstructions = zoomInstructions;
+        }
+
+        let key_to_exit;
+
+        if (!this.isMobile) {
+            key_to_exit = 'SPACE';
+        } else {
+            key_to_exit = 'TAP';
         }
 
         // Create orbit help text
-        this.orbitHelpText = new PIXI.Text('SPACE: Exit Orbit | Trajectory line shows predicted path', {
+        this.orbitHelpText = new PIXI.Text(key_to_exit + ': Exit Orbit | Trajectory line shows predicted path', {
             fontFamily: 'Arial',
-            fontSize: 16,
+            fontSize: 14,
             fill: 0xFFCC33
         });
         this.orbitHelpText.x = this.width / 2;
@@ -240,17 +249,31 @@ class Game {
         this.width = newWidth;
         this.height = newHeight;
 
-        // Update UI positions more robustly
-        if (this.fuelText) { this.fuelText.x = 20; this.fuelText.y = 20; }
-        if (this.scoreText) { this.scoreText.x = 20; this.scoreText.y = 50; }
-        if (this.zoomText) { this.zoomText.x = 20; this.zoomText.y = 80; }
-        if (this.planetCountText) { this.planetCountText.x = 20; this.planetCountText.y = 110; }
-        if (this.usernameText) { this.usernameText.x = 20; this.usernameText.y = 140; }
+        // Update UI positions more robustly - position based on device type
+        if (this.isMobile) {
+            // Mobile layout - position UI elements at the bottom
+            if (this.fuelText) { this.fuelText.x = 20; this.fuelText.y = newHeight - 90; }
+            if (this.scoreText) { this.scoreText.x = 20; this.scoreText.y = newHeight - 60; }
+            if (this.planetCountText) { this.planetCountText.x = 20; this.planetCountText.y = newHeight - 30; }
+        } else {
+            // Desktop layout - position UI elements at the top-left
+            if (this.fuelText) { this.fuelText.x = 20; this.fuelText.y = 20; }
+            if (this.scoreText) { this.scoreText.x = 20; this.scoreText.y = 50; }
+            if (this.planetCountText) { this.planetCountText.x = 20; this.planetCountText.y = 80; }
+        }
+
+        // Shared UI elements
         if (this.messageText) { this.messageText.x = newWidth / 2; this.messageText.y = newHeight / 2; }
         if (this.orbitHelpText) { this.orbitHelpText.x = newWidth / 2; this.orbitHelpText.y = newHeight - 40; }
         if (this.orbitEntryText) { this.orbitEntryText.x = newWidth / 2; this.orbitEntryText.y = newHeight - 70; }
         if (this.sunWarningText) { this.sunWarningText.x = newWidth / 2; this.sunWarningText.y = 100; }
         if (this.boundaryWarningText) { this.boundaryWarningText.x = newWidth / 2; this.boundaryWarningText.y = 130; }
+
+        // Update zoom instructions position to remain in bottom-right
+        if (this.zoomInstructions) {
+            this.zoomInstructions.x = newWidth - 20;
+            this.zoomInstructions.y = newHeight - 20;
+        }
 
         // Recalculate boundary maybe? Or other dimension-dependent things
         this.drawBoundary();
@@ -991,7 +1014,7 @@ class Game {
                 this.updateCamera();
 
                 // Update fuel display
-                this.fuelText.text = `FUEL: ${Math.floor(this.spaceship.fuel)}%`;
+                this.fuelText.text = `⛽: ${Math.floor(this.spaceship.fuel)}%`;
 
                 // Show orbit help text when in orbit
                 this.orbitHelpText.visible = !!this.spaceship.orbiting;
@@ -1138,7 +1161,7 @@ class Game {
         });
 
         // Update score display (no need to recalculate score each frame)
-        this.scoreText.text = `SCORE: ${this.score}`;
+        this.scoreText.text = `🏆: ${this.score}`;
 
         // Award bonus when all planets are visited, but don't end the game
         if (visitedCount === totalPlanets && totalPlanets > 0) {
@@ -1162,7 +1185,7 @@ class Game {
         }
 
         // Update planet counter
-        this.planetCountText.text = `Visited 🪂: ${visitedCount}/${totalPlanets}`;
+        this.planetCountText.text = `🪐: ${visitedCount}/${totalPlanets}`;
     }
 
     // Add score for various planet actions (orbit or colonize)
@@ -1394,7 +1417,7 @@ class Game {
 
     updateScore() {
         // Update the score display
-        this.scoreText.text = `SCORE: ${this.score}`;
+        this.scoreText.text = `🏆: ${this.score}`;
     }
 
     gameOver(message, isVictory = false) {
@@ -1402,6 +1425,9 @@ class Game {
 
         // Prepare the game over text without leaderboard rank initially
         let gameOverText = message + '\n\n';
+
+        // Add pilot name
+        gameOverText += `PILOT: ${this.username}\n`;
 
         // Add special bonus message for victory
         if (isVictory && this.allPlanetsBonus) {
@@ -1515,6 +1541,11 @@ class Game {
 
     // Display leaderboard after game over
     displayLeaderboardAfterGameOver() {
+        // Clear existing leaderboard if any
+        if (this.gameOverLeaderboard && this.gameOverLeaderboard.parent) {
+            this.gameOverLeaderboard.parent.removeChild(this.gameOverLeaderboard);
+        }
+
         // Create leaderboard container
         const leaderboardContainer = new PIXI.Container();
         leaderboardContainer.name = 'leaderboard'; // Add a name for easier identification
@@ -1544,7 +1575,7 @@ class Game {
         });
         loadingText.anchor.set(0.5, 0);
         loadingText.x = 0;
-        loadingText.y = 50;
+        loadingText.y = 30;
         leaderboardContainer.addChild(loadingText);
 
         // Store reference for cleanup
@@ -1559,7 +1590,28 @@ class Game {
                 const topEntries = leaderboard.slice(0, 3); // Show top 3 entries
 
                 if (topEntries.length > 0) {
-                    // Display entries
+                    // Create background for leaderboard entries
+                    const entriesBg = new PIXI.Graphics();
+                    entriesBg.beginFill(0x000033, 0.3);
+
+                    // Calculate width based on longest entry (with some padding)
+                    let maxWidth = 0;
+                    topEntries.forEach(entry => {
+                        const testText = new PIXI.Text(`${entry.username} - ${entry.score} pts`, {
+                            fontFamily: 'Arial',
+                            fontSize: 16
+                        });
+                        maxWidth = Math.max(maxWidth, testText.width);
+                    });
+
+                    const bgWidth = maxWidth + 80; // Add padding for rank number
+                    const bgHeight = (topEntries.length * 35) + 10; // 35px per entry + padding
+
+                    entriesBg.drawRoundedRect(-bgWidth / 2, 30, bgWidth, bgHeight, 5);
+                    entriesBg.endFill();
+                    leaderboardContainer.addChild(entriesBg);
+
+                    // Display entries with better spacing and positioning
                     topEntries.forEach((entry, index) => {
                         const color = entry.username === this.username ? 0xFFFF33 : 0xCCCCFF;
 
@@ -1574,7 +1626,7 @@ class Game {
                         );
                         scoreRow.anchor.set(0.5, 0);
                         scoreRow.x = 0;
-                        scoreRow.y = 30 + index * 25;
+                        scoreRow.y = 30 + (index * 35); // Increased spacing between entries (35px)
                         leaderboardContainer.addChild(scoreRow);
                     });
                 } else {
@@ -1586,7 +1638,7 @@ class Game {
                     });
                     noScoresText.anchor.set(0.5, 0);
                     noScoresText.x = 0;
-                    noScoresText.y = 50;
+                    noScoresText.y = 30;
                     leaderboardContainer.addChild(noScoresText);
                 }
             })
@@ -1704,12 +1756,6 @@ class Game {
     applyZoom() {
         // Set container scale
         this.gameContainer.scale.set(this.zoom);
-
-        // Don't directly set the container position here as it will cause a jump
-        // Instead, let the updateCamera method handle the smooth positioning
-        // Just update the zoom text
-        const zoomPercentage = Math.round(this.zoom * 100);
-        this.zoomText.text = `ZOOM: ${zoomPercentage}%`;
 
         // Force camera update to start adjusting to the new zoom level
         this.updateCamera();
@@ -1986,7 +2032,7 @@ class Game {
         }
 
         const totalPlanets = CONSTANTS.PLANETS.length;
-        this.planetCountText.text = `Visited 🪂: ${visitedCount}/${totalPlanets}`;
+        this.planetCountText.text = `🪐: ${visitedCount}/${totalPlanets}`;
 
         // Check if all planets have been visited
         if (visitedCount === totalPlanets && !this.allPlanetsBonus) {

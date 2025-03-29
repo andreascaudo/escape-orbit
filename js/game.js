@@ -100,7 +100,7 @@ class Game {
 
     createUI() {
         // Create fuel gauge
-        this.fuelText = new PIXI.Text('FUEL: 100%', {
+        this.fuelText = new PIXI.Text('⛽: 100%', {
             fontFamily: 'Arial',
             fontSize: 16,
             fill: 0xFFFFFF
@@ -119,17 +119,6 @@ class Game {
         this.scoreText.y = 50;
         this.uiContainer.addChild(this.scoreText);
 
-        // Create zoom display with correct initial value
-        const zoomPercentage = Math.round(this.zoom * 100);
-        this.zoomText = new PIXI.Text(`ZOOM: ${zoomPercentage}%`, {
-            fontFamily: 'Arial',
-            fontSize: 16,
-            fill: 0xFFFFFF
-        });
-        this.zoomText.x = 20;
-        this.zoomText.y = 80;
-        this.uiContainer.addChild(this.zoomText);
-
         // Create planet counter with more space
         this.planetCountText = new PIXI.Text('Visited 🪂: 1/8', {
             fontFamily: 'Arial',
@@ -137,7 +126,7 @@ class Game {
             fill: 0xFFFFFF
         });
         this.planetCountText.x = 20;
-        this.planetCountText.y = 110;
+        this.planetCountText.y = 80;
         this.uiContainer.addChild(this.planetCountText);
 
         // Create username display
@@ -147,7 +136,7 @@ class Game {
             fill: 0xFFDD33
         });
         this.usernameText.x = 20;
-        this.usernameText.y = 140;
+        this.usernameText.y = 110;
         this.uiContainer.addChild(this.usernameText);
 
         // Create zoom instruction - only on desktop
@@ -1378,12 +1367,6 @@ class Game {
     applyZoom() {
         // Set container scale
         this.gameContainer.scale.set(this.zoom);
-
-        // Don't directly set the container position here as it will cause a jump
-        // Instead, let the updateCamera method handle the smooth positioning
-        // Just update the zoom text
-        const zoomPercentage = Math.round(this.zoom * 100);
-        this.zoomText.text = `ZOOM: ${zoomPercentage}%`;
 
         // Force camera update to start adjusting to the new zoom level
         this.updateCamera();

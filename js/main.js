@@ -95,11 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 game.scoreText.y = 50;
             }
 
-            if (game.zoomText) {
-                game.zoomText.x = 20;
-                game.zoomText.y = 80;
-            }
-
             if (game.messageText) {
                 game.messageText.x = newWidth / 2;
                 game.messageText.y = newHeight / 2;
@@ -112,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (game.planetCountText) {
                 game.planetCountText.x = 20;
-                game.planetCountText.y = 110;
+                game.planetCountText.y = 80;
             }
         }
 

@@ -57,8 +57,18 @@ class Spaceship {
         // Track which planets the ship is currently inside of
         this.currentlyInsidePlanets = {};
 
-        // Create sprite
-        this.sprite = new PIXI.Graphics();
+        // Load spaceship textures
+        this.normalTexture = PIXI.Texture.from('../images/spaceship_noflames.png');
+        this.boostTexture = PIXI.Texture.from('../images/spaceship_flames.png');
+
+        // Create sprite using the normal texture initially
+        this.sprite = new PIXI.Sprite(this.normalTexture);
+
+        // Set anchor to center of the sprite for proper rotation
+        this.sprite.anchor.set(0.5, 0.5);
+
+        // Scale the sprite to an appropriate size (adjust as needed)
+        this.sprite.scale.set(0.04, 0.04);
 
         // Create trajectory prediction line
         this.trajectoryLine = new PIXI.Graphics();
@@ -67,67 +77,32 @@ class Spaceship {
     }
 
     drawSpaceship() {
-        const sprite = this.sprite;
-        sprite.clear();
-
-        // Draw ship body
-        sprite.beginFill(0xFFFFFF);
-        sprite.moveTo(10, 0);
-        sprite.lineTo(-5, -5);
-        sprite.lineTo(-3, 0);
-        sprite.lineTo(-5, 5);
-        sprite.lineTo(10, 0);
-        sprite.endFill();
-
-        // Draw engine flame if boosting
+        // Switch textures based on boosting state
         if (this.boosting && this.fuel > 0) {
-            sprite.beginFill(0xFF4400);
-            sprite.moveTo(-3, 0);
-            sprite.lineTo(-10, -3);
-            sprite.lineTo(-15, 0);
-            sprite.lineTo(-10, 3);
-            sprite.lineTo(-3, 0);
-            sprite.endFill();
+            this.sprite.texture = this.boostTexture;
+        } else {
+            this.sprite.texture = this.normalTexture;
         }
 
-        // Draw burning effects if being damaged by sun
+        // Handle burning effects from sun
         if (this.burning) {
             this.burnAnimationTime += 0.2;
 
-            // Draw heat waves around the spaceship
-            const waveCount = 5;
-            for (let i = 0; i < waveCount; i++) {
-                const angleOffset = (i / waveCount) * Math.PI * 2 + this.burnAnimationTime;
-                const distScale = 1 + Math.sin(this.burnAnimationTime * 0.5 + i);
+            // Add a red tint to indicate burning
+            this.sprite.tint = 0xFF9999;
 
-                // Red/orange flames with varying opacity
-                const flameOpacity = 0.4 + 0.3 * Math.sin(this.burnAnimationTime + i * 0.7);
-
-                sprite.beginFill(0xFF3300, flameOpacity);
-
-                // Draw flame particles
-                const flameX = Math.cos(angleOffset) * 6 * distScale;
-                const flameY = Math.sin(angleOffset) * 6 * distScale;
-                const flameSize = 2 + Math.sin(this.burnAnimationTime + i) * 1.5;
-
-                sprite.drawCircle(flameX, flameY, flameSize);
-                sprite.endFill();
-            }
-
-            // Draw ship hull with reddish tint to indicate heating
-            sprite.beginFill(0xFFDDAA, 0.5);
-            sprite.moveTo(10, 0);
-            sprite.lineTo(-5, -5);
-            sprite.lineTo(-3, 0);
-            sprite.lineTo(-5, 5);
-            sprite.lineTo(10, 0);
-            sprite.endFill();
+            // Add burning effect by varying alpha slightly
+            this.sprite.alpha = 0.7 + 0.3 * Math.sin(this.burnAnimationTime * 0.5);
+        } else {
+            // Reset to normal appearance
+            this.sprite.tint = 0xFFFFFF;
+            this.sprite.alpha = 1.0;
         }
 
-        // Set position and rotation
-        sprite.x = this.x;
-        sprite.y = this.y;
-        sprite.rotation = this.rotation;
+        // Update position and rotation
+        this.sprite.x = this.x;
+        this.sprite.y = this.y;
+        this.sprite.rotation = this.rotation + Math.PI / 2;
     }
 
     // Draw a prediction line showing the trajectory when exiting orbit

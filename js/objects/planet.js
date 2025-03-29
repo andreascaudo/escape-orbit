@@ -109,7 +109,7 @@ class Planet {
             try {
                 // Create a text object with parachute emoji
                 if (!this.parachuteEmoji) {
-                    this.parachuteEmoji = new PIXI.Text('🏴‍☠️', {
+                    this.parachuteEmoji = new PIXI.Text('🏡', {
                         fontFamily: 'Arial',
                         fontSize: this.radius * 0.5,
                         align: 'center'

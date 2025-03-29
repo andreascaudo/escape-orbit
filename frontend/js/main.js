@@ -190,8 +190,8 @@ function handleResize() {
             if (game.fuelText) { game.fuelText.x = 20; game.fuelText.y = 20; }
             if (game.scoreText) { game.scoreText.x = 20; game.scoreText.y = 50; }
             if (game.zoomText) { game.zoomText.x = 20; game.zoomText.y = 80; }
-            if (game.planetCountText) { game.planetCountText.x = 20; game.planetCountText.y = 110; }
-            if (game.usernameText) { game.usernameText.x = 20; game.usernameText.y = 140; }
+            if (game.planetCountText) { game.planetCountText.x = 20; game.planetCountText.y = 80; }
+            if (game.usernameText) { game.usernameText.x = 20; game.usernameText.y = 110; }
             if (game.messageText) { game.messageText.x = newWidth / 2; game.messageText.y = newHeight / 2; }
             if (game.orbitHelpText) { game.orbitHelpText.x = newWidth / 2; game.orbitHelpText.y = newHeight - 40; }
             if (game.orbitEntryText) { game.orbitEntryText.x = newWidth / 2; game.orbitEntryText.y = newHeight - 70; }

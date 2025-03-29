@@ -80,8 +80,17 @@ class UsernameScreen {
         // --- End Define Zone ---
 
         // Clear existing planets if any
-        this.planets.forEach(p => this.container.removeChild(p));
+        this.planets.forEach(p => {
+            if (p.parent) {
+                p.parent.removeChild(p);
+            }
+        });
         this.planets = [];
+
+        // Make sure background exists before adding planets
+        if (!this.backgroundSprite || !this.backgroundSprite.parent) {
+            this.createBackground();
+        }
 
         // Load and place each unique planet
         planetImagePaths.forEach(path => {
@@ -151,8 +160,15 @@ class UsernameScreen {
             }
             // --- End Updated Position Finding Logic ---
 
-            // Add planet above background (index 1), but below other UI
-            this.container.addChildAt(planet, 1);
+            // Add planet to the container with a check
+            if (this.container.children.length > 0) {
+                // Add above background (index 0), but below other UI
+                this.container.addChildAt(planet, Math.min(1, this.container.children.length));
+            } else {
+                // Just add to container if no children yet
+                this.container.addChild(planet);
+            }
+
             this.planets.push(planet); // Add to list *after* setting position
         });
     }
@@ -491,8 +507,20 @@ class UsernameScreen {
         this.leaderboardContainer = new PIXI.Container(); // Assign to instance variable
         // Positioning adjusted slightly to accommodate potential scrollbar later if needed
         this.leaderboardContainer.x = this.app.screen.width / 2 - LEADERBOARD_WIDTH / 2;
-        this.leaderboardContainer.y = this.inputBg.y * 2; // Moved up slightly
+        this.leaderboardContainer.y = this.inputBg.y * 1.5; // Moved up slightly
         this.container.addChild(this.leaderboardContainer);
+
+        // Create leaderboard background (acts as scroll trigger area)
+        // Adjusted height to include title and scroll area
+        const totalBgHeight = CONTENT_START_Y + SCROLL_AREA_HEIGHT + 10; // Added padding
+        const leaderboardBg = new PIXI.Graphics();
+        leaderboardBg.beginFill(0x000033, 0.5);
+        leaderboardBg.lineStyle(2, 0x3355FF);
+        leaderboardBg.drawRoundedRect(0, 0, LEADERBOARD_WIDTH, totalBgHeight, 10); // y=0 relative to leaderboardContainer
+        leaderboardBg.endFill();
+        leaderboardBg.eventMode = 'static'; // Make it interactive for scroll events
+        leaderboardBg.cursor = 'default'; // Keep default cursor
+        this.leaderboardContainer.addChild(leaderboardBg);
 
         // Create leaderboard title
         const leaderboardTitle = new PIXI.Text('TOP PILOTS', {
@@ -506,18 +534,6 @@ class UsernameScreen {
         leaderboardTitle.x = LEADERBOARD_WIDTH / 2;
         leaderboardTitle.y = 0;
         this.leaderboardContainer.addChild(leaderboardTitle);
-
-        // Create leaderboard background (acts as scroll trigger area)
-        // Adjusted height to include title and scroll area
-        const totalBgHeight = CONTENT_START_Y + SCROLL_AREA_HEIGHT + 10; // Added padding
-        const leaderboardBg = new PIXI.Graphics();
-        leaderboardBg.beginFill(0x000033, 0.5);
-        leaderboardBg.lineStyle(2, 0x3355FF);
-        leaderboardBg.drawRoundedRect(0, 0, LEADERBOARD_WIDTH, totalBgHeight, 10); // y=0 relative to leaderboardContainer
-        leaderboardBg.endFill();
-        leaderboardBg.eventMode = 'static'; // Make it interactive for scroll events
-        leaderboardBg.cursor = 'default'; // Keep default cursor
-        this.leaderboardContainer.addChild(leaderboardBg);
 
         // --- Header Row ---
         const headerRow = new PIXI.Container();

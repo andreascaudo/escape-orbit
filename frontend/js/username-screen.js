@@ -6,6 +6,7 @@ class UsernameScreen {
         this.onComplete = onComplete;
         this.container = new PIXI.Container();
         this.username = ""; // Get existing username if available
+        this.planets = []; // Array to hold planet sprites
 
         this.init();
     }
@@ -14,8 +15,12 @@ class UsernameScreen {
         // Add container to stage
         this.app.stage.addChild(this.container);
 
-        // Create background
+        // Create background sprite
+        this.backgroundSprite = null; // Initialize
         this.createBackground();
+
+        // Create random planets on the background
+        this.createRandomPlanets(); // Load the 6 unique planets
 
         // Create UI elements
         // Store references to elements for resizing
@@ -39,83 +44,175 @@ class UsernameScreen {
     }
 
     createBackground() {
-        // Create a starfield background
-        this.background = new PIXI.Graphics();
-        this.background.beginFill(0x000022);
-        this.background.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
-        this.background.endFill();
-        this.container.addChild(this.background);
-
-        // Add stars
-        this.stars = new PIXI.Container();
-        this.container.addChild(this.stars);
-
-        // Add 200 stars
-        for (let i = 0; i < 200; i++) {
-            const star = new PIXI.Graphics();
-            const size = Math.random() * 2 + 1;
-            const alpha = Math.random() * 0.5 + 0.5;
-            star.beginFill(0xFFFFFF, alpha);
-            star.drawCircle(0, 0, size);
-            star.endFill();
-            star.x = Math.random() * this.app.screen.width;
-            star.y = Math.random() * this.app.screen.height;
-            this.stars.addChild(star);
-
-            // Add twinkling animation
-            star.twinkling = Math.random() * 2 * Math.PI;
-            star.twinkleSpeed = Math.random() * 0.03 + 0.01;
-            star.originalAlpha = alpha;
-        }
-
-        // Animate the stars
-        this.app.ticker.add(this.animateStars, this);
+        // Create a sprite for the background image
+        const texture = PIXI.Texture.from('../images/image.png'); // CORRECTED PATH
+        this.backgroundSprite = new PIXI.Sprite(texture);
+        this.backgroundSprite.width = this.app.screen.width;
+        this.backgroundSprite.height = this.app.screen.height;
+        this.backgroundSprite.anchor.set(0.5); // Anchor to center for easier positioning/scaling
+        this.backgroundSprite.x = this.app.screen.width / 2;
+        this.backgroundSprite.y = this.app.screen.height / 2;
+        this.container.addChildAt(this.backgroundSprite, 0); // Add to bottom
     }
 
-    animateStars(delta) {
-        this.stars.children.forEach(star => {
-            star.twinkling += star.twinkleSpeed * delta;
-            star.alpha = star.originalAlpha * (0.7 + 0.3 * Math.sin(star.twinkling));
+    createRandomPlanets() {
+        const planetImagePaths = [
+            '../images/planet_0.png',
+            '../images/planet_1.png',
+            '../images/planet_2.png',
+            '../images/planet_3.png',
+            '../images/planet_4.png',
+            '../images/planet_5.png',
+            '../images/spaceship2.png'
+        ];
+        const minDistance = 100; // Minimum distance between planet centers
+        const maxAttempts = 20; // Max attempts to find a suitable position
+
+        // --- Define Central Exclusion Zone --- (Recalculated each time for resize)
+        const screenWidth = this.app.screen.width;
+        const screenHeight = this.app.screen.height;
+        const zoneWidth = Math.min(screenWidth * 0.6, 500); // Max 500px or 60%
+        const zoneHeight = Math.min(screenHeight * 0.6, 400); // Max 400px or 60%
+        const zoneLeft = (screenWidth - zoneWidth) / 2;
+        const zoneRight = zoneLeft + zoneWidth;
+        const zoneTop = (screenHeight - zoneHeight) / 2;
+        const zoneBottom = zoneTop + zoneHeight;
+        // --- End Define Zone ---
+
+        // Clear existing planets if any
+        this.planets.forEach(p => this.container.removeChild(p));
+        this.planets = [];
+
+        // Load and place each unique planet
+        planetImagePaths.forEach(path => {
+            const texture = PIXI.Texture.from(path);
+            const planet = new PIXI.Sprite(texture);
+
+            planet.anchor.set(0.5);
+            planet.scale.set(Math.random() * 0.15 + 0.15); // Scale (15% - 30%)
+            planet.rotation = Math.random() * Math.PI * 2;
+            planet.alpha = Math.random() * 0.3 + 0.6;
+
+            // --- Updated Position Finding Logic ---
+            let attempts = 0;
+            let positionFound = false;
+            while (attempts < maxAttempts && !positionFound) {
+                // Generate potential position
+                const padding = 50;
+                const potentialX = Math.random() * (screenWidth - padding * 2) + padding;
+                const potentialY = Math.random() * (screenHeight - padding * 2) + padding;
+
+                // Check 1: Is it inside the exclusion zone?
+                const isInExclusionZone = (
+                    potentialX > zoneLeft && potentialX < zoneRight &&
+                    potentialY > zoneTop && potentialY < zoneBottom
+                );
+
+                let collisionWithOtherPlanet = false;
+                // Check 2: Is it too close to other planets? (Only if not in exclusion zone)
+                if (!isInExclusionZone) {
+                    for (const existingPlanet of this.planets) {
+                        const dx = potentialX - existingPlanet.x;
+                        const dy = potentialY - existingPlanet.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < minDistance) {
+                            collisionWithOtherPlanet = true;
+                            break;
+                        }
+                    }
+                }
+
+                // If valid (outside zone AND not colliding), place it
+                if (!isInExclusionZone && !collisionWithOtherPlanet) {
+                    planet.x = potentialX;
+                    planet.y = potentialY;
+                    positionFound = true;
+                }
+                attempts++;
+            }
+
+            // If no position found after max attempts, place it randomly OUTSIDE the exclusion zone if possible
+            if (!positionFound) {
+                console.warn(`Could not find ideal position for planet ${path} after ${maxAttempts} attempts. Placing semi-randomly.`);
+                // Try placing randomly again, forcing it outside the exclusion zone boundaries
+                let finalX, finalY;
+                let placeAttempts = 0;
+                do {
+                    const padding = 10; // Use smaller padding for fallback
+                    finalX = Math.random() * (screenWidth - padding * 2) + padding;
+                    finalY = Math.random() * (screenHeight - padding * 2) + padding;
+                    placeAttempts++;
+                } while (
+                    (finalX > zoneLeft && finalX < zoneRight && finalY > zoneTop && finalY < zoneBottom) && placeAttempts < 10
+                );
+                planet.x = finalX;
+                planet.y = finalY;
+                // It might still collide with others in this fallback scenario
+            }
+            // --- End Updated Position Finding Logic ---
+
+            // Add planet above background (index 1), but below other UI
+            this.container.addChildAt(planet, 1);
+            this.planets.push(planet); // Add to list *after* setting position
         });
     }
 
     createUI() {
-        this.container.removeChildren(); // Clear previous UI if any (e.g., during resize recreation)
-        this.container.addChild(this.background); // Re-add background
-        this.container.addChild(this.stars); // Re-add stars
+        // Remove previous UI elements (title, input, buttons, leaderboard)
+        // These elements are added *after* the background (index 0) and planets (indices 1 to 1+N-1)
+        const startIndexToRemove = 1 + this.planets.length;
+        while (this.container.children.length > startIndexToRemove) {
+            this.container.removeChildAt(startIndexToRemove);
+        }
+
+        // Clear potentially lingering UI references (keep planet references)
+        this.title = null;
+        this.subtitle = null;
+        this.inputBg = null;
+        this.inputText = null;
+        this.cursor = null;
+        this.randomButton = null;
+        this.randomText = null;
+        this.startButton = null;
+        this.startText = null;
+        this.leaderboardContainer = null;
+        this.leaderboardScrollContent = null;
+        if (this.cursorInterval) clearInterval(this.cursorInterval); // Clear existing interval early
+        this.cursorInterval = null;
 
         const isMobileLandscape = this.detectMobile() && this.app.screen.width > this.app.screen.height;
         const screenWidth = this.app.screen.width;
         const screenHeight = this.app.screen.height;
 
         // --- Title ---
-        this.title = new PIXI.Text('ESCAPE ORBIT', {
-            fontFamily: 'Arial',
-            fontSize: 48,
-            fontWeight: 'bold',
-            fill: 0xFFFFFF,
-            align: 'center',
-            dropShadow: true,
-            dropShadowColor: 0x000000,
-            dropShadowDistance: 3
-        });
-        this.title.anchor.set(0.5, 0.5); // Center anchor for easier vertical positioning
+        const titleTexture = PIXI.Texture.from('../images/title.png');
+        this.title = new PIXI.Sprite(titleTexture);
+        this.title.anchor.set(0.5); // Center anchor
+        // Optional: Scale the title image if needed
+        const titleScale = 0.5;// Scale down if too wide, allow some padding
+        this.title.scale.set(titleScale);
+
         this.title.x = screenWidth / 2;
         // Adjust Y: Lower on desktop (more space), higher on mobile landscape
-        this.title.y = isMobileLandscape ? screenHeight * 0.20 : 80;
+        const titleYPosition = isMobileLandscape ? screenHeight * 0.15 : 80;
+        this.title.y = titleYPosition;
         this.container.addChild(this.title);
 
         // --- Subtitle (Desktop only) ---
         if (!isMobileLandscape) {
-            this.subtitle = new PIXI.Text('What\'s your callsign, pilot?', {
-                fontFamily: 'Arial',
-                fontSize: 24,
-                fill: 0xCCCCFF,
-                align: 'center'
-            });
-            this.subtitle.anchor.set(0.5, 0);
+            // Replace Text with Sprite
+            const subtitleTexture = PIXI.Texture.from('../images/subtitle.png');
+            this.subtitle = new PIXI.Sprite(subtitleTexture);
+            this.subtitle.anchor.set(0.5, 0); // Anchor top-center for positioning below title
+
+            // Optional: Scale subtitle based on screen width (similar to title)
+            const subtitleScale = 0.3; // Scale down if wide, add padding
+            this.subtitle.scale.set(subtitleScale);
+
             this.subtitle.x = screenWidth / 2;
-            this.subtitle.y = this.title.y + 40; // Position below title
+            // Position below title sprite, considering title's height/scale and subtitle's height/scale
+            const spacing = 100; // Pixels between title bottom and subtitle top
+            this.subtitle.y = this.title.y * 2 + spacing; //+ (this.title.height * this.title.scale.y / 2) + spacing;
             this.container.addChild(this.subtitle);
         } else {
             this.subtitle = null; // Ensure it's null on mobile landscape
@@ -125,7 +222,7 @@ class UsernameScreen {
         const inputWidth = Math.min(screenWidth * 0.8, 400); // Responsive width
         const inputHeight = 50;
         // Adjust Y: Center vertically between title and buttons on mobile landscape, fixed position on desktop
-        const inputY = isMobileLandscape ? screenHeight / 2 - inputHeight / 2 - 30 : screenHeight / 2 - 170;
+        const inputY = isMobileLandscape ? screenHeight / 2 - inputHeight / 2 - 30 : this.subtitle.y + 50;
 
         this.inputBg = new PIXI.Graphics();
         this.inputBg.beginFill(0x000033);
@@ -235,14 +332,18 @@ class UsernameScreen {
     }
 
     handleResize(newWidth, newHeight) {
-        // Re-create background (simpler than resizing complex graphics)
-        if (this.background) {
-            this.background.clear();
-            this.background.beginFill(0x000022);
-            this.background.drawRect(0, 0, newWidth, newHeight);
-            this.background.endFill();
+        // Resize the background sprite
+        if (this.backgroundSprite) {
+            this.backgroundSprite.width = newWidth;
+            this.backgroundSprite.height = newHeight;
+            this.backgroundSprite.x = newWidth / 2;
+            this.backgroundSprite.y = newHeight / 2;
         }
         // Note: Star positions aren't updated here, might need adjustment if crucial
+
+        // --- Recreate planets with collision detection for new size ---
+        this.createRandomPlanets();
+        // --- End Recreate Planets ---
 
         // --- Re-calculate layout based on new dimensions ---
         const isMobileLandscape = this.detectMobile() && newWidth > newHeight;
@@ -251,24 +352,20 @@ class UsernameScreen {
         if (this.title) {
             this.title.x = newWidth / 2;
             this.title.y = isMobileLandscape ? newHeight * 0.20 : 80;
+            // Optional: Recalculate scale on resize if desired
+            const titleScale = Math.min(1, newWidth / (this.title.texture.width * 1.2)); // Use texture width for original size
+            this.title.scale.set(titleScale);
         }
 
         // --- Subtitle ---
-        if (!isMobileLandscape) {
-            // Create subtitle if it doesn't exist (transition from mobile landscape)
-            if (!this.subtitle && this.title) {
-                this.subtitle = new PIXI.Text('What\'s your callsign, pilot?', { /* styles */ });
-                this.subtitle.anchor.set(0.5, 0);
-                this.container.addChild(this.subtitle);
-            }
-            if (this.subtitle && this.title) {
-                this.subtitle.x = newWidth / 2;
-                this.subtitle.y = this.title.y + 40; // Position below title
-            }
-        } else {
-            // Remove subtitle if it exists (transition to mobile landscape)
+        if (isMobileLandscape) {
+            // Remove subtitle sprite if it exists (transition to mobile landscape)
             if (this.subtitle) {
-                this.container.removeChild(this.subtitle);
+                // Ensure it has a parent before removing (safer)
+                if (this.subtitle.parent) {
+                    this.container.removeChild(this.subtitle);
+                }
+                // Optional: Destroy sprite if needed: this.subtitle.destroy();
                 this.subtitle = null;
             }
         }
@@ -394,7 +491,7 @@ class UsernameScreen {
         this.leaderboardContainer = new PIXI.Container(); // Assign to instance variable
         // Positioning adjusted slightly to accommodate potential scrollbar later if needed
         this.leaderboardContainer.x = this.app.screen.width / 2 - LEADERBOARD_WIDTH / 2;
-        this.leaderboardContainer.y = this.app.screen.height / 2 + 100; // Moved up slightly
+        this.leaderboardContainer.y = this.inputBg.y * 2; // Moved up slightly
         this.container.addChild(this.leaderboardContainer);
 
         // Create leaderboard title
@@ -638,7 +735,6 @@ class UsernameScreen {
 
         // Stop animations and intervals
         if (this.cursorInterval) clearInterval(this.cursorInterval); // Clear interval
-        this.app.ticker.remove(this.animateStars, this);
 
         // Clean up PIXI elements (optional but good practice)
         this.container.removeChildren(); // Remove all children managed by this screen
@@ -657,11 +753,17 @@ class UsernameScreen {
         // Remove key event listeners
         window.removeEventListener('keydown', this.handleKeyDown.bind(this));
 
-        // Stop ticker
-        this.app.ticker.remove(this.animateStars, this);
-
         // Clear cursor interval
         if (this.cursorInterval) clearInterval(this.cursorInterval);
+
+        // Remove planet sprites
+        this.planets.forEach(p => {
+            if (p.parent) {
+                p.parent.removeChild(p);
+            }
+            // Optional: p.destroy(); if needed
+        });
+        this.planets = []; // Clear the array
 
         // Remove container from stage if it exists and has a parent
         if (this.container && this.container.parent) {

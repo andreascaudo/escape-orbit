@@ -10,7 +10,16 @@ This directory contains all the static files for the Escape Orbit game that will
 
 ## Recent Updates
 
-- Fixed leaderboard display in portrait orientation mode - The leaderboard now appears directly in the portrait orientation screen below the game instructions
+- Updated spaceship graphics with new image assets (spaceship_noflames.png and spaceship_flames.png)
+- Improved game over screen with better leaderboard display and spacing
+- Removed username display from top left UI and moved it to the game over screen
+- Repositioned UI elements (fuel, score, planets) to the bottom of the screen on mobile devices
+- Moved zoom instructions to the bottom-right corner on desktop
+- Increased font size for UI elements on desktop for better readability
+- Fixed overlapping leaderboard entries in the game over screen
+- Centered game instructions text in portrait mode for improved readability
+- Fixed planet creation error in the username screen
+- The leaderboard now appears directly in the portrait orientation screen below the game instructions
 - Added game boundary detection - The game now ends when the spaceship travels outside the solar system boundary
 - Fixed centering issues during orientation changes - Game canvas now properly centers when switching from portrait to landscape mode
 - Improved mobile responsiveness - Eliminated black bands on the sides in landscape mode

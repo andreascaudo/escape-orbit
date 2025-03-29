@@ -58,6 +58,16 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
   - **API Gateway**: API management
   - **DynamoDB**: NoSQL database for leaderboard storage
 
+## Recent Updates
+
+- Updated spaceship graphics with dedicated sprite images
+- Improved game over screen with leaderboard and player name
+- Repositioned UI elements based on device type (desktop/mobile)
+- Increased font size on desktop for better readability
+- Optimized mobile portrait mode with centered instructions
+- Fixed visual bugs in the leaderboard display
+- Improved responsive design for different screen sizes
+
 ## Local Setup
 
 1. Clone the repository:

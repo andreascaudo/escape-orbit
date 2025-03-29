@@ -75,6 +75,12 @@ Core gameplay mechanics are in place and the game is playable with all essential
 - [x] Error handling and logging for troubleshooting
 
 #### Recent Enhancements
+- [x] Updated spaceship graphics with dedicated sprite images 
+- [x] Improved game over screen with better leaderboard display
+- [x] Enhanced mobile UI with repositioned elements for better gameplay
+- [x] Improved desktop UI with larger font sizes and better positioned info
+- [x] Optimized portrait mode instructions with centered text
+- [x] Fixed visual bugs in leaderboard display
 - [x] Migrated backend from Express to AWS Lambda + DynamoDB
 - [x] Added production deployment to AWS cloud infrastructure
 - [x] Implemented CloudFront for global content delivery

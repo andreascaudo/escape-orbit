@@ -71,6 +71,8 @@
 - [x] Create username input screen with animation
 - [x] Add leaderboard display to start and game over screens
 - [x] Add loading indicators for asynchronous operations
+- [x] Update spaceship with dedicated sprite images for normal and boost modes
+- [x] Improve leaderboard display with better spacing and background
 
 ### UX and Controls
 - [x] Optimize mobile controls
@@ -84,6 +86,10 @@
 - [x] Improve bonus notification messages
 - [x] Add input cooldown to prevent accidental actions
 - [x] Implement username persistence
+- [x] Reposition UI elements based on device type (mobile/desktop)
+- [x] Optimize portrait mode instructions with centered text
+- [x] Position game info optimally for different device sizes
+- [x] Improve game over screen with pilot name display
 
 ### Optimization
 - [x] Improve frame rate on mobile

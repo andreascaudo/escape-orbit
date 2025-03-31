@@ -188,7 +188,7 @@ class Game {
             // Position in bottom-right corner
             zoomInstructions.anchor.set(1, 1); // Anchor to bottom-right
             zoomInstructions.x = this.width - 20;
-            zoomInstructions.y = this.height - 20;
+            zoomInstructions.y = 20;
             this.uiContainer.addChild(zoomInstructions);
 
             // Store reference for resizing
@@ -272,7 +272,6 @@ class Game {
         // Update zoom instructions position to remain in bottom-right
         if (this.zoomInstructions) {
             this.zoomInstructions.x = newWidth - 20;
-            this.zoomInstructions.y = newHeight - 20;
         }
 
         // Recalculate boundary maybe? Or other dimension-dependent things
@@ -1749,7 +1748,7 @@ class Game {
     }
 
     resetZoom() {
-        this.zoom = 1;
+        this.zoom = 0.6;
         this.applyZoom();
     }
 

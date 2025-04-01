@@ -78,7 +78,7 @@
             width: 100%;
             border-collapse: collapse;
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: Futura, sans-serif;
         }
 
         .leaderboard-table th,
@@ -115,7 +115,8 @@
             text-align: center;
             z-index: 1000;
             flex-direction: column;
-            font-family: Arial, sans-serif;
+            font-family: Futura, sans-serif;
+            font-size: 16px;
         }
 
         #orientation-message img {
@@ -183,23 +184,23 @@
 
             /* ---- NEW RULES FOR PORTRAIT CONTENT ---- */
             #orientation-message img {
-                width: 60px;
+                width: 40px;
                 /* Smaller image */
-                height: 60px;
-                margin-bottom: 10px;
+                height: 40px;
+                margin-bottom: 0px;
                 /* Less space below image */
             }
 
             #orientation-message h2 {
                 font-size: 1.4em;
                 /* Smaller main title */
-                margin-bottom: 5px;
+                margin-bottom: 0px;
             }
 
             #orientation-message>p {
                 /* Target the "Please rotate" paragraph */
                 font-size: 0.9em;
-                margin-bottom: 15px;
+                margin-bottom: 0px;
                 /* Less space below rotate message */
             }
 
@@ -218,17 +219,16 @@
             }
 
             #orientation-message h3 {
-                font-size: 1.1em;
+                font-size: 1.3em;
                 /* Smaller section titles */
                 margin-top: 10px;
                 margin-bottom: 5px;
                 text-align: center;
             }
 
-            #orientation-message p,
             /* Includes CONTROLS/GAMEPLAY labels */
             #orientation-message ul {
-                font-size: 0.8em;
+                font-size: 0.9em;
                 /* Smaller instruction text */
                 text-align: center;
             }
@@ -246,6 +246,11 @@
                 margin-bottom: 2px;
                 /* Tighter list items */
                 text-align: center;
+            }
+
+            #instructions-container p {
+                margin-top: 15px;
+                margin-bottom: 0px;
             }
 
             /* Leaderboard specific adjustments */
@@ -267,7 +272,7 @@
             /* Loading/No scores */
             #orientation-message #portrait-leaderboard table th,
             #orientation-message #portrait-leaderboard table td {
-                font-size: 13px;
+                font-size: 12px;
                 /* Even smaller font in table */
                 padding: 3px;
                 /* Less cell padding */
@@ -291,7 +296,8 @@
         <h2>Please rotate your device</h2>
         <p>This game works best in landscape mode</p>
 
-        <div style="margin-top: 0px; text-align: center; max-width: 90%; margin-left: auto; margin-right: auto;">
+        <div id="instructions-container"
+            style="margin-top: 0px; text-align: center; max-width: 90%; margin-left: auto; margin-right: auto;">
             <h3>GAME INSTRUCTIONS:</h3>
             <p><strong>CONTROLS:</strong></p>
             <ul style="padding-left: 0; list-style-position: inside;">
@@ -302,7 +308,7 @@
             <ul style="padding-left: 0; list-style-position: inside;">
                 <li>🪐 Visit planets by entering orbit</li>
                 <li>Collect fuel pods (🛰️) and avoid hazards (☄️)</li>
-                <li>Win by colonizing all planets</li>
+                <li>Colonize all planets and achieve the highest score</li>
             </ul>
 
             <!-- Leaderboard section -->

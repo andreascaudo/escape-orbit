@@ -250,7 +250,7 @@ class UsernameScreen {
         this.container.addChild(this.inputBg);
 
         this.inputText = new PIXI.Text(this.username, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 24,
             fill: 0xFFFFFF,
             align: 'left'
@@ -295,7 +295,7 @@ class UsernameScreen {
         this.container.addChild(this.randomButton);
 
         this.randomText = new PIXI.Text('Random Name', { // Shorter text for smaller buttons
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: buttonWidth < 150 ? 16 : 20, // Adjust font size
             fill: 0xFFFFFF,
             align: 'center'
@@ -324,7 +324,7 @@ class UsernameScreen {
         this.container.addChild(this.startButton);
 
         this.startText = new PIXI.Text('Start Game', { // Shorter text
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: buttonWidth < 150 ? 16 : 20, // Adjust font size
             fill: 0xFFFFFF,
             align: 'center'
@@ -524,7 +524,7 @@ class UsernameScreen {
 
         // Create leaderboard title
         const leaderboardTitle = new PIXI.Text('TOP PILOTS', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 24,
             fontWeight: 'bold',
             fill: 0xFFDD33,
@@ -540,19 +540,19 @@ class UsernameScreen {
         headerRow.y = 40; // Below title
         this.leaderboardContainer.addChild(headerRow);
 
-        const rankHeader = new PIXI.Text('Rank', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        const rankHeader = new PIXI.Text('Rank', { fontFamily: 'Futura', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
         rankHeader.x = 20;
         headerRow.addChild(rankHeader);
 
-        const nameHeader = new PIXI.Text('Pilot', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        const nameHeader = new PIXI.Text('Pilot', { fontFamily: 'Futura', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
         nameHeader.x = 70;
         headerRow.addChild(nameHeader);
 
-        const scoreHeader = new PIXI.Text('Score', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        const scoreHeader = new PIXI.Text('Score', { fontFamily: 'Futura', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
         scoreHeader.x = 250;
         headerRow.addChild(scoreHeader);
 
-        const planetsHeader = new PIXI.Text('Planets', { fontFamily: 'Arial', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
+        const planetsHeader = new PIXI.Text('Planets', { fontFamily: 'Futura', fontSize: 16, fontWeight: 'bold', fill: 0xCCCCFF });
         planetsHeader.x = 330;
         headerRow.addChild(planetsHeader);
         // --- End Header Row ---
@@ -579,7 +579,7 @@ class UsernameScreen {
 
         // Create loading indicator (positioned within the eventual scroll area)
         const loadingText = new PIXI.Text('Loading leaderboard...', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 18,
             fill: 0xCCCCCC,
             align: 'center'
@@ -608,7 +608,7 @@ class UsernameScreen {
 
             if (allEntries.length === 0) {
                 const noScoresText = new PIXI.Text('No scores yet!', {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 18,
                     fill: 0xCCCCCC,
                     align: 'center'
@@ -625,11 +625,11 @@ class UsernameScreen {
                     row.y = index * ROW_HEIGHT;
                     this.scrollContentContainer.addChild(row);
 
-                    const rankText = new PIXI.Text(`${index + 1}`, { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
+                    const rankText = new PIXI.Text(`${index + 1}`, { fontFamily: 'Futura', fontSize: 16, fill: 0xFFFFFF });
                     rankText.x = 20;
                     row.addChild(rankText);
 
-                    const nameText = new PIXI.Text(entry.username, { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
+                    const nameText = new PIXI.Text(entry.username, { fontFamily: 'Futura', fontSize: 16, fill: 0xFFFFFF });
                     nameText.x = 70;
                     // Truncate name if too long
                     if (nameText.width > 170) { // Adjust width check if needed
@@ -637,11 +637,11 @@ class UsernameScreen {
                     }
                     row.addChild(nameText);
 
-                    const scoreText = new PIXI.Text(entry.score.toString(), { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
+                    const scoreText = new PIXI.Text(entry.score.toString(), { fontFamily: 'Futura', fontSize: 16, fill: 0xFFFFFF });
                     scoreText.x = 250;
                     row.addChild(scoreText);
 
-                    const planetsText = new PIXI.Text(entry.planetsVisited.toString(), { fontFamily: 'Arial', fontSize: 16, fill: 0xFFFFFF });
+                    const planetsText = new PIXI.Text(entry.planetsVisited.toString(), { fontFamily: 'Futura', fontSize: 16, fill: 0xFFFFFF });
                     planetsText.x = 330;
                     row.addChild(planetsText);
                 });
@@ -654,7 +654,7 @@ class UsernameScreen {
             } else {
                 // If loading text was already removed, add a new error text
                 const errorText = new PIXI.Text('Error loading', {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 18,
                     fill: 0xFF8888,
                     align: 'center'

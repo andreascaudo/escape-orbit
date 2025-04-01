@@ -398,7 +398,7 @@ class FuelBoost {
         // Create the floating fuel text
         if (window.game) {
             this.fuelText = new PIXI.Text(`Fuel +${this.fuelAmount}`, {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 18, // Increased text size (was 16)
                 fontWeight: 'bold',
                 fill: 0x44AAFF,

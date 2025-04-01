@@ -51,7 +51,7 @@ class Planet {
 
         // Create label for the planet
         this.label = new PIXI.Text(this.name, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 12,
             fill: 0xFFFFFF,
             align: 'center'

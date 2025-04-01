@@ -101,7 +101,7 @@ class Game {
     createUI() {
         // Create fuel gauge
         this.fuelText = new PIXI.Text('⛽: 100%', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xFFFFFF
         });
@@ -111,7 +111,7 @@ class Game {
 
         // Create score display
         this.scoreText = new PIXI.Text('SCORE: 0', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xFFFFFF
         });
@@ -121,7 +121,7 @@ class Game {
 
         // Create planet counter with more space
         this.planetCountText = new PIXI.Text('Visited 🪂: 1/8', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xFFFFFF
         });
@@ -131,7 +131,7 @@ class Game {
 
         // Create username display
         this.usernameText = new PIXI.Text(`PILOT: ${this.username}`, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xFFDD33
         });
@@ -142,7 +142,7 @@ class Game {
         // Create zoom instruction - only on desktop
         if (!this.isMobile) {
             const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 14,
                 fill: 0xAAAAAA
             });
@@ -153,7 +153,7 @@ class Game {
 
         // Create orbit help text
         this.orbitHelpText = new PIXI.Text('SPACE: Exit Orbit | Trajectory line shows predicted path', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xFFCC33
         });
@@ -165,7 +165,7 @@ class Game {
 
         // Create orbit entry help text
         this.orbitEntryText = new PIXI.Text('SPACE: Enter Orbit around nearby planet', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0x33CCFF
         });
@@ -177,7 +177,7 @@ class Game {
 
         // Create message text
         this.messageText = new PIXI.Text('', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 22,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -204,7 +204,7 @@ class Game {
 
         // Add leaderboard display to title screen
         const leaderboardTitle = new PIXI.Text('LEADERBOARD', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFFDD33,
@@ -221,7 +221,7 @@ class Game {
 
         // Create loading indicator for leaderboard
         const loadingText = new PIXI.Text('Loading leaderboard...', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xCCCCCC,
             align: 'center'
@@ -237,7 +237,7 @@ class Game {
 
         // Game title
         const titleText = new PIXI.Text('ESCAPE ORBIT', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 48,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -253,7 +253,7 @@ class Game {
 
         // Add player username
         const welcomeText = new PIXI.Text(`Welcome, ${this.username}!`, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 24,
             fill: 0xFFDD33,
             align: 'center'
@@ -265,7 +265,7 @@ class Game {
 
         // Add instructions text
         const instructionsText = new PIXI.Text('INSTRUCTIONS:', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -282,7 +282,7 @@ class Game {
             controlsText = new PIXI.Text(
                 '• TAP to enter/exit orbit around planets\n• HOLD to boost your spaceship\n• Visit all planets to win!',
                 {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 18,
                     fill: 0xCCCCFF,
                     align: 'center'
@@ -292,7 +292,7 @@ class Game {
             controlsText = new PIXI.Text(
                 '• CLICK or SPACE to enter/exit orbit\n• HOLD CLICK or SPACE to boost\n• +/- keys to zoom in/out, 0 to reset\n• Visit all planets to win!',
                 {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 18,
                     fill: 0xCCCCFF,
                     align: 'center'
@@ -308,7 +308,7 @@ class Game {
         const scoringText = new PIXI.Text(
             'SCORING:\n• 20 pts - Enter orbit\n• 50 pts - Fly through planet\n• 50 BONUS - Enter orbit after flythrough\n• 1000 pts - COSMIC ACHIEVEMENT (visit all planets)',
             {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 16,
                 fill: 0xFFFFFF,
                 align: 'center'
@@ -342,7 +342,7 @@ class Game {
 
             if (topEntries.length === 0) {
                 const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 16,
                     fill: 0xCCCCCC,
                     align: 'center'
@@ -357,7 +357,7 @@ class Game {
                     const scoreRow = new PIXI.Text(
                         `${index + 1}. ${entry.username} - ${entry.score} pts (${entry.planetsVisited} planets)`,
                         {
-                            fontFamily: 'Arial',
+                            fontFamily: 'Futura',
                             fontSize: 16,
                             fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
                             align: 'left'
@@ -387,7 +387,7 @@ class Game {
         startButton.cursor = 'pointer';
 
         const startText = new PIXI.Text('START GAME', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 24,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -493,7 +493,7 @@ class Game {
 
         // Create Sun label
         const sunLabel = new PIXI.Text('Sun', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 14,
             fill: 0xFFFFFF,
             align: 'center'
@@ -647,7 +647,7 @@ class Game {
                 if (this.spaceship.burning) {
                     if (!this.sunWarningText) {
                         this.sunWarningText = new PIXI.Text('WARNING: Solar radiation damaging ship!', {
-                            fontFamily: 'Arial',
+                            fontFamily: 'Futura',
                             fontSize: 20,
                             fontWeight: 'bold',
                             fill: 0xFF3300,
@@ -1211,7 +1211,7 @@ class Game {
 
         // Create leaderboard title
         const leaderboardTitle = new PIXI.Text('TOP PILOTS', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 18,
             fontWeight: 'bold',
             fill: 0xFFDD33,
@@ -1224,7 +1224,7 @@ class Game {
 
         // Create loading text
         const loadingText = new PIXI.Text('Loading leaderboard...', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xCCCCCC,
             align: 'center'
@@ -1253,7 +1253,7 @@ class Game {
                         const scoreRow = new PIXI.Text(
                             `${index + 1}. ${entry.username} - ${entry.score} pts`,
                             {
-                                fontFamily: 'Arial',
+                                fontFamily: 'Futura',
                                 fontSize: 16,
                                 fill: color,
                                 align: 'center'
@@ -1266,7 +1266,7 @@ class Game {
                     });
                 } else {
                     const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                        fontFamily: 'Arial',
+                        fontFamily: 'Futura',
                         fontSize: 16,
                         fill: 0xCCCCCC,
                         align: 'center'
@@ -1592,7 +1592,7 @@ class Game {
     showMessage(text, duration = 2000) {
         // Create a temporary message that shows then fades out
         const message = new PIXI.Text(text, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFFFFFF,

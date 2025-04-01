@@ -67,6 +67,7 @@ class Game {
         this.sunWarningText = null;
         this.usernameText = null; // Add username display
         this.boundaryWarningText = null; // Add boundary warning text
+        this.gameOverPanel = null; // Background panel for game over screen
 
         // Sound effects
         this.sounds = {
@@ -118,21 +119,21 @@ class Game {
     createUI() {
         // Create fuel gauge
         this.fuelText = new PIXI.Text('⛽: 100%', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: this.isMobile ? 16 : 22,
             fill: 0xFFFFFF
         });
 
         // Create score display
         this.scoreText = new PIXI.Text('🏆: 0', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: this.isMobile ? 16 : 22,
             fill: 0xFFFFFF
         });
 
         // Create planet counter with more space
         this.planetCountText = new PIXI.Text('🪐: 1/8', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: this.isMobile ? 16 : 22,
             fill: 0xFFFFFF
         });
@@ -166,7 +167,7 @@ class Game {
 
         // Create boundary warning text
         this.boundaryWarningText = new PIXI.Text('WARNING: Approaching solar system boundary!', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFF9900,
@@ -181,7 +182,7 @@ class Game {
         // Create zoom instruction - only on desktop
         if (!this.isMobile) {
             const zoomInstructions = new PIXI.Text('Press + to zoom in, - to zoom out, 0 to reset', {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 14,
                 fill: 0xAAAAAA
             });
@@ -205,7 +206,7 @@ class Game {
 
         // Create orbit help text
         this.orbitHelpText = new PIXI.Text(key_to_exit + ': Exit Orbit | Trajectory line shows predicted path', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 14,
             fill: 0xFFCC33
         });
@@ -217,7 +218,7 @@ class Game {
 
         // Create orbit entry help text
         this.orbitEntryText = new PIXI.Text('SPACE: Enter Orbit around nearby planet', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0x33CCFF
         });
@@ -229,7 +230,7 @@ class Game {
 
         // Create message text
         this.messageText = new PIXI.Text('', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 22,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -241,7 +242,11 @@ class Game {
         });
         this.messageText.anchor.set(0.5);
         this.messageText.x = this.width / 2;
-        this.messageText.y = this.height / 2;
+        if (!this.isMobile) {
+            this.messageText.y = this.height / 2 - 75;
+        } else {
+            this.messageText.y = this.height / 2;
+        }
         this.uiContainer.addChild(this.messageText);
     }
 
@@ -263,11 +268,17 @@ class Game {
         }
 
         // Shared UI elements
-        if (this.messageText) { this.messageText.x = newWidth / 2; this.messageText.y = newHeight / 2; }
+        if (this.messageText) { this.messageText.x = newWidth / 2; if (!this.isMobile) { this.messageText.y = newHeight / 2 - 75; } else { this.messageText.y = newHeight / 2; } }
         if (this.orbitHelpText) { this.orbitHelpText.x = newWidth / 2; this.orbitHelpText.y = newHeight - 40; }
         if (this.orbitEntryText) { this.orbitEntryText.x = newWidth / 2; this.orbitEntryText.y = newHeight - 70; }
         if (this.sunWarningText) { this.sunWarningText.x = newWidth / 2; this.sunWarningText.y = 100; }
         if (this.boundaryWarningText) { this.boundaryWarningText.x = newWidth / 2; this.boundaryWarningText.y = 130; }
+
+        // Update game over panel position if it exists
+        if (this.gameOverPanel) { this.gameOverPanel.x = newWidth / 2; this.gameOverPanel.y = newHeight / 2; }
+
+        // Update game over leaderboard position if it exists
+        if (this.gameOverLeaderboard) { this.gameOverLeaderboard.x = newWidth / 2; this.gameOverLeaderboard.y = newHeight / 2; }
 
         // Update zoom instructions position to remain in bottom-right
         if (this.zoomInstructions) {
@@ -311,7 +322,7 @@ class Game {
 
         // Add leaderboard display to title screen
         const leaderboardTitle = new PIXI.Text('LEADERBOARD', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFFDD33,
@@ -328,7 +339,7 @@ class Game {
 
         // Create loading indicator for leaderboard
         const loadingText = new PIXI.Text('Loading leaderboard...', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xCCCCCC,
             align: 'center'
@@ -344,7 +355,7 @@ class Game {
 
         // Game title
         const titleText = new PIXI.Text('ESCAPE ORBIT', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 48,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -374,7 +385,7 @@ class Game {
 
         // Add player username
         const welcomeText = new PIXI.Text(`Welcome, ${this.username}!`, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 24,
             fill: 0xFFDD33,
             align: 'center'
@@ -400,7 +411,7 @@ class Game {
 
         // Add instructions text
         const instructionsText = new PIXI.Text('INSTRUCTIONS:', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -417,7 +428,7 @@ class Game {
             controlsText = new PIXI.Text(
                 '• TAP to enter/exit orbit around planets\n• HOLD to boost your spaceship\n• Visit all planets to win!',
                 {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 18,
                     fill: 0xCCCCFF,
                     align: 'center'
@@ -427,7 +438,7 @@ class Game {
             controlsText = new PIXI.Text(
                 '• CLICK or SPACE to enter/exit orbit\n• HOLD CLICK or SPACE to boost\n• +/- keys to zoom in/out, 0 to reset\n• Visit all planets to win!',
                 {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 18,
                     fill: 0xCCCCFF,
                     align: 'center'
@@ -443,7 +454,7 @@ class Game {
         const scoringText = new PIXI.Text(
             'SCORING:\n• 20 pts - Enter orbit\n• 50 pts - Fly through planet\n• 50 BONUS - Enter orbit after flythrough\n• 1000 pts - COSMIC ACHIEVEMENT (visit all planets)',
             {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 16,
                 fill: 0xFFFFFF,
                 align: 'center'
@@ -461,7 +472,7 @@ class Game {
 
             // Position leaderboard below scoring info with more spacing on mobile
             const mobileLeaderboardTitle = new PIXI.Text('TOP PILOTS', {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 20,
                 fontWeight: 'bold',
                 fill: 0xFFDD33,
@@ -477,7 +488,7 @@ class Game {
 
                 // Add attention indicator in portrait mode
                 const attentionText = new PIXI.Text('⭐ LEADERBOARD ⭐', {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 16,
                     fill: 0xFFFFFF,
                     align: 'center'
@@ -515,7 +526,7 @@ class Game {
 
             // Create loading text
             const mobileLoadingText = new PIXI.Text('Loading leaderboard...', {
-                fontFamily: 'Arial',
+                fontFamily: 'Futura',
                 fontSize: 16,
                 fill: 0xCCCCCC,
                 align: 'center'
@@ -538,7 +549,7 @@ class Game {
 
                 if (topEntries.length === 0) {
                     const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                        fontFamily: 'Arial',
+                        fontFamily: 'Futura',
                         fontSize: fontSize,
                         fill: 0xCCCCCC,
                         align: 'center'
@@ -553,7 +564,7 @@ class Game {
                         const scoreRow = new PIXI.Text(
                             `${index + 1}. ${entry.username} - ${entry.score} pts`,
                             {
-                                fontFamily: 'Arial',
+                                fontFamily: 'Futura',
                                 fontSize: fontSize,
                                 fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
                                 align: 'center'
@@ -596,7 +607,7 @@ class Game {
 
             if (topEntries.length === 0) {
                 const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                    fontFamily: 'Arial',
+                    fontFamily: 'Futura',
                     fontSize: 16,
                     fill: 0xCCCCCC,
                     align: 'center'
@@ -611,7 +622,7 @@ class Game {
                     const scoreRow = new PIXI.Text(
                         `${index + 1}. ${entry.username} - ${entry.score} pts (${entry.planetsVisited} planets)`,
                         {
-                            fontFamily: 'Arial',
+                            fontFamily: 'Futura',
                             fontSize: 16,
                             fill: index === 0 ? 0xFFDD33 : 0xCCCCFF,
                             align: 'left'
@@ -658,7 +669,7 @@ class Game {
         startButton.cursor = 'pointer';
 
         const startText = new PIXI.Text('START GAME', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 24,
             fontWeight: 'bold',
             fill: 0xFFFFFF,
@@ -699,6 +710,14 @@ class Game {
                 this.gameOverLeaderboard.parent.removeChild(this.gameOverLeaderboard);
             }
             this.gameOverLeaderboard = null;
+        }
+
+        // Clean up the game over panel
+        if (this.gameOverPanel) {
+            if (this.gameOverPanel.parent) {
+                this.gameOverPanel.parent.removeChild(this.gameOverPanel);
+            }
+            this.gameOverPanel = null;
         }
 
         // Remove any other leaderboard elements that might exist
@@ -781,7 +800,7 @@ class Game {
 
         // Create Sun label
         const sunLabel = new PIXI.Text('Sun', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 14,
             fill: 0xFFFFFF,
             align: 'center'
@@ -938,7 +957,7 @@ class Game {
                 if (this.spaceship.burning) {
                     if (!this.sunWarningText) {
                         this.sunWarningText = new PIXI.Text('WARNING: Solar radiation damaging ship!', {
-                            fontFamily: 'Arial',
+                            fontFamily: 'Futura',
                             fontSize: 20,
                             fontWeight: 'bold',
                             fill: 0xFF3300,
@@ -978,8 +997,8 @@ class Game {
                         return;
                     }
 
-                    // Show warning when within 10% of the boundary
-                    if (distancePercentage > 0.9) {
+                    // Show warning when within 20% of the boundary
+                    if (distancePercentage > 0.8) {
                         if (this.boundaryWarningText) {
                             this.boundaryWarningText.visible = true;
                             // Pulse the warning text (more intense as we get closer)
@@ -1080,7 +1099,7 @@ class Game {
                         this.spaceship.fuel = Math.min(CONSTANTS.MAX_FUEL, this.spaceship.fuel + fuelAmount);
 
                         // Show fuel collection message
-                        this.showMessage(`Collected ${fuelAmount} fuel!`, 1500);
+                        this.showMessage(`Collected +${fuelAmount} fuel!`, 1500);
 
                         // Play sound effect (reuse existing sound)
                         this.sounds.colonize.play();
@@ -1454,16 +1473,74 @@ class Game {
         gameOverText += `HIGH SCORE: ${this.highScore}\n`;
         gameOverText += `PLANETS VISITED: ${this.maxPlanetsVisited}/${CONSTANTS.PLANETS.length}\n\n`;
 
-        if (newHighScore) {
-            gameOverText += 'NEW HIGH SCORE!\n\n';
-        }
-
         gameOverText += 'Saving to leaderboard...\n';
         gameOverText += 'Click/Tap or Press ESC to Play Again';
 
-        // Use messageText for game over display
+        // First temporarily hide the message text
+        this.messageText.visible = false;
+
+        // Create a background panel for game over text
+        // First clear any existing panel
+        if (this.gameOverPanel && this.gameOverPanel.parent) {
+            this.gameOverPanel.parent.removeChild(this.gameOverPanel);
+        }
+
+        // Create new background panel
+        const gameOverPanel = new PIXI.Graphics();
+        gameOverPanel.beginFill(0x000033, 0.8); // Dark blue with 80% opacity
+        gameOverPanel.lineStyle(2, 0x3355FF); // Add blue edge like the leaderboard in title screen
+
+        // Create a temporary text to measure the dimensions needed
+        const tempText = new PIXI.Text(gameOverText, {
+            fontFamily: 'Futura',
+            fontSize: 24,
+            fill: 0xFFFFFF,
+            align: 'center'
+        });
+
+        // Calculate dimensions with some padding for both game over text and leaderboard
+        const panelWidth = Math.max(tempText.width + 120, 500); // Increased width from 60 to 120px padding, and minimum width from 400 to 500
+
+        const panelHeight = tempText.height; // Extra space for leaderboard below
+
+        // Draw the panel centered on screen
+        if (!this.isMobile) {
+            // For desktop: center the panel vertically
+            gameOverPanel.drawRoundedRect(-panelWidth / 2, -panelHeight / 2 - 75, panelWidth, (panelHeight + 150), 15);
+        } else {
+            gameOverPanel.drawRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 15);
+        }
+        gameOverPanel.endFill();
+
+        // Position at the center of the screen
+        gameOverPanel.x = this.width / 2;
+        gameOverPanel.y = this.height / 2;
+
+        // Add to UI container first (so it appears behind the text)
+        this.uiContainer.addChild(gameOverPanel);
+
+        // Store reference for cleanup
+        this.gameOverPanel = gameOverPanel;
+
+        // Now set the message text and make it visible
         this.messageText.text = gameOverText;
         this.messageText.alpha = 1; // Ensure message is fully visible
+        this.messageText.visible = true;
+
+        // Position message text at the top section of the panel
+
+        if (!this.isMobile) {
+            this.messageText.y = this.height / 2 - 75;
+        } else {
+            this.messageText.y = this.height / 2;
+        }
+
+        // Ensure text is on top by removing and re-adding it to its parent
+        if (this.messageText.parent) {
+            const parent = this.messageText.parent;
+            parent.removeChild(this.messageText);
+            parent.addChild(this.messageText);
+        }
 
         // Play sound effect
         if (isVictory) {
@@ -1496,7 +1573,9 @@ class Game {
                     this.messageText.text = updatedText;
 
                     // Add leaderboard to game over screen
-                    this.displayLeaderboardAfterGameOver();
+                    if (!this.isMobile) {
+                        this.displayLeaderboardAfterGameOver();
+                    }
                 })
                 .catch(error => {
                     console.error('Error saving to leaderboard:', error);
@@ -1506,8 +1585,10 @@ class Game {
                         'Error saving to leaderboard\n'
                     );
 
-                    // Still show leaderboard
-                    this.displayLeaderboardAfterGameOver();
+                    // Still show leaderboard only on desktop
+                    if (!this.isMobile) {
+                        this.displayLeaderboardAfterGameOver();
+                    }
                 });
         } else {
             // Score is 0, don't save
@@ -1515,8 +1596,10 @@ class Game {
                 'Saving to leaderboard...\n',
                 'Not worth saving :/\n'
             );
-            // Still display leaderboard even if score is 0
-            this.displayLeaderboardAfterGameOver();
+            // Still display leaderboard only on desktop
+            if (!this.isMobile) {
+                this.displayLeaderboardAfterGameOver();
+            }
         }
         // --- End Leaderboard Saving Logic ---
 
@@ -1529,9 +1612,6 @@ class Game {
         // Make sure we don't add duplicate listeners
         this.stage.eventMode = 'static';
         this.stage.off('pointerdown');
-
-        // Add leaderboard to game over screen
-        this.displayLeaderboardAfterGameOver();
 
         // Make message text interactive
         this.messageText.eventMode = 'static';
@@ -1561,13 +1641,22 @@ class Game {
         // Create leaderboard container
         const leaderboardContainer = new PIXI.Container();
         leaderboardContainer.name = 'leaderboard'; // Add a name for easier identification
+
+        // Position leaderboard based on device type with different offsets
         leaderboardContainer.x = this.width / 2;
-        leaderboardContainer.y = this.height / 2 + 150;
+
+        // Use different positioning for mobile vs desktop
+        if (this.isMobile) {
+            leaderboardContainer.y = this.height / 2 + 80; // Mobile position
+        } else {
+            leaderboardContainer.y = this.height / 2 - 120; // Desktop position (much higher than before)
+        }
+
         this.uiContainer.addChild(leaderboardContainer);
 
         // Create leaderboard title
         const leaderboardTitle = new PIXI.Text('TOP PILOTS', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 18,
             fontWeight: 'bold',
             fill: 0xFFDD33,
@@ -1575,19 +1664,19 @@ class Game {
         });
         leaderboardTitle.anchor.set(0.5, 0);
         leaderboardTitle.x = 0;
-        leaderboardTitle.y = 0;
+        leaderboardTitle.y = 70;
         leaderboardContainer.addChild(leaderboardTitle);
 
         // Create loading text
         const loadingText = new PIXI.Text('Loading leaderboard...', {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 16,
             fill: 0xCCCCCC,
             align: 'center'
         });
         loadingText.anchor.set(0.5, 0);
         loadingText.x = 0;
-        loadingText.y = 30;
+        loadingText.y = 100;
         leaderboardContainer.addChild(loadingText);
 
         // Store reference for cleanup
@@ -1602,35 +1691,14 @@ class Game {
                 const topEntries = leaderboard.slice(0, 3); // Show top 3 entries
 
                 if (topEntries.length > 0) {
-                    // Create background for leaderboard entries
-                    const entriesBg = new PIXI.Graphics();
-                    entriesBg.beginFill(0x000033, 0.3);
-
-                    // Calculate width based on longest entry (with some padding)
-                    let maxWidth = 0;
-                    topEntries.forEach(entry => {
-                        const testText = new PIXI.Text(`${entry.username} - ${entry.score} pts`, {
-                            fontFamily: 'Arial',
-                            fontSize: 16
-                        });
-                        maxWidth = Math.max(maxWidth, testText.width);
-                    });
-
-                    const bgWidth = maxWidth + 80; // Add padding for rank number
-                    const bgHeight = (topEntries.length * 35) + 10; // 35px per entry + padding
-
-                    entriesBg.drawRoundedRect(-bgWidth / 2, 30, bgWidth, bgHeight, 5);
-                    entriesBg.endFill();
-                    leaderboardContainer.addChild(entriesBg);
-
-                    // Display entries with better spacing and positioning
+                    // Display entries with better spacing and positioning - no separate background needed
                     topEntries.forEach((entry, index) => {
                         const color = entry.username === this.username ? 0xFFFF33 : 0xCCCCFF;
 
                         const scoreRow = new PIXI.Text(
                             `${index + 1}. ${entry.username} - ${entry.score} pts`,
                             {
-                                fontFamily: 'Arial',
+                                fontFamily: 'Futura',
                                 fontSize: 16,
                                 fill: color,
                                 align: 'center'
@@ -1638,19 +1706,19 @@ class Game {
                         );
                         scoreRow.anchor.set(0.5, 0);
                         scoreRow.x = 0;
-                        scoreRow.y = 30 + (index * 35); // Increased spacing between entries (35px)
+                        scoreRow.y = 100 + (index * 35); // Tighten spacing between entries
                         leaderboardContainer.addChild(scoreRow);
                     });
                 } else {
                     const noScoresText = new PIXI.Text('No scores yet. You could be the first!', {
-                        fontFamily: 'Arial',
+                        fontFamily: 'Futura',
                         fontSize: 16,
                         fill: 0xCCCCCC,
                         align: 'center'
                     });
                     noScoresText.anchor.set(0.5, 0);
                     noScoresText.x = 0;
-                    noScoresText.y = 30;
+                    noScoresText.y = 100;
                     leaderboardContainer.addChild(noScoresText);
                 }
             })
@@ -1998,7 +2066,7 @@ class Game {
     showMessage(text, duration = 2000) {
         // Create a temporary message that shows then fades out
         const message = new PIXI.Text(text, {
-            fontFamily: 'Arial',
+            fontFamily: 'Futura',
             fontSize: 20,
             fontWeight: 'bold',
             fill: 0xFFFFFF,

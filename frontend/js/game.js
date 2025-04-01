@@ -242,7 +242,11 @@ class Game {
         });
         this.messageText.anchor.set(0.5);
         this.messageText.x = this.width / 2;
-        this.messageText.y = this.height / 2;
+        if (!this.isMobile) {
+            this.messageText.y = this.height / 2 - 75;
+        } else {
+            this.messageText.y = this.height / 2;
+        }
         this.uiContainer.addChild(this.messageText);
     }
 
@@ -264,7 +268,7 @@ class Game {
         }
 
         // Shared UI elements
-        if (this.messageText) { this.messageText.x = newWidth / 2; this.messageText.y = newHeight / 2; }
+        if (this.messageText) { this.messageText.x = newWidth / 2; if (!this.isMobile) { this.messageText.y = newHeight / 2 - 75; } else { this.messageText.y = newHeight / 2; } }
         if (this.orbitHelpText) { this.orbitHelpText.x = newWidth / 2; this.orbitHelpText.y = newHeight - 40; }
         if (this.orbitEntryText) { this.orbitEntryText.x = newWidth / 2; this.orbitEntryText.y = newHeight - 70; }
         if (this.sunWarningText) { this.sunWarningText.x = newWidth / 2; this.sunWarningText.y = 100; }
@@ -274,7 +278,7 @@ class Game {
         if (this.gameOverPanel) { this.gameOverPanel.x = newWidth / 2; this.gameOverPanel.y = newHeight / 2; }
 
         // Update game over leaderboard position if it exists
-        if (this.gameOverLeaderboard) { this.gameOverLeaderboard.x = newWidth / 2; this.gameOverLeaderboard.y = newHeight / 2 + 150; }
+        if (this.gameOverLeaderboard) { this.gameOverLeaderboard.x = newWidth / 2; this.gameOverLeaderboard.y = newHeight / 2; }
 
         // Update zoom instructions position to remain in bottom-right
         if (this.zoomInstructions) {
@@ -1495,7 +1499,7 @@ class Game {
         });
 
         // Calculate dimensions with some padding for both game over text and leaderboard
-        const panelWidth = Math.max(tempText.width + 60, 400); // Ensure minimum width for leaderboard
+        const panelWidth = Math.max(tempText.width + 120, 500); // Increased width from 60 to 120px padding, and minimum width from 400 to 500
 
         const panelHeight = tempText.height; // Extra space for leaderboard below
 
@@ -1524,7 +1528,12 @@ class Game {
         this.messageText.visible = true;
 
         // Position message text at the top section of the panel
-        this.messageText.y = this.height / 2 - 50;
+
+        if (!this.isMobile) {
+            this.messageText.y = this.height / 2 - 75;
+        } else {
+            this.messageText.y = this.height / 2;
+        }
 
         // Ensure text is on top by removing and re-adding it to its parent
         if (this.messageText.parent) {
@@ -1563,7 +1572,7 @@ class Game {
 
                     this.messageText.text = updatedText;
 
-                    // Add leaderboard to game over screen
+                    // Add leaderboard to game over screen (only on desktop)
                     if (!this.isMobile) {
                         this.displayLeaderboardAfterGameOver();
                     }
@@ -1576,7 +1585,7 @@ class Game {
                         'Error saving to leaderboard\n'
                     );
 
-                    // Still show leaderboard
+                    // Still show leaderboard (only on desktop)
                     if (!this.isMobile) {
                         this.displayLeaderboardAfterGameOver();
                     }
@@ -1587,8 +1596,10 @@ class Game {
                 'Saving to leaderboard...\n',
                 'Not worth saving :/\n'
             );
-            // Still display leaderboard even if score is 0
-            this.displayLeaderboardAfterGameOver();
+            // Only display leaderboard on desktop
+            if (!this.isMobile) {
+                this.displayLeaderboardAfterGameOver();
+            }
         }
         // --- End Leaderboard Saving Logic ---
 
@@ -1601,9 +1612,6 @@ class Game {
         // Make sure we don't add duplicate listeners
         this.stage.eventMode = 'static';
         this.stage.off('pointerdown');
-
-        // Add leaderboard to game over screen
-        this.displayLeaderboardAfterGameOver();
 
         // Make message text interactive
         this.messageText.eventMode = 'static';
@@ -1634,14 +1642,14 @@ class Game {
         const leaderboardContainer = new PIXI.Container();
         leaderboardContainer.name = 'leaderboard'; // Add a name for easier identification
 
-        // Position leaderboard in the bottom part of the gameOverPanel
-        if (this.gameOverPanel) {
-            leaderboardContainer.x = this.width / 2;
-            leaderboardContainer.y = this.height / 2 + 90; // Position it in the lower part of our shared panel
+        // Position leaderboard based on device type with different offsets
+        leaderboardContainer.x = this.width / 2;
+
+        // Use different positioning for mobile vs desktop
+        if (this.isMobile) {
+            leaderboardContainer.y = this.height / 2 + 80; // Mobile position
         } else {
-            // Fallback position if panel doesn't exist
-            leaderboardContainer.x = this.width / 2;
-            leaderboardContainer.y = this.height / 2 + 150;
+            leaderboardContainer.y = this.height / 2 - 120; // Desktop position (much higher than before)
         }
 
         this.uiContainer.addChild(leaderboardContainer);
@@ -1656,7 +1664,7 @@ class Game {
         });
         leaderboardTitle.anchor.set(0.5, 0);
         leaderboardTitle.x = 0;
-        leaderboardTitle.y = 0;
+        leaderboardTitle.y = 70;
         leaderboardContainer.addChild(leaderboardTitle);
 
         // Create loading text
@@ -1668,7 +1676,7 @@ class Game {
         });
         loadingText.anchor.set(0.5, 0);
         loadingText.x = 0;
-        loadingText.y = 30;
+        loadingText.y = 100;
         leaderboardContainer.addChild(loadingText);
 
         // Store reference for cleanup
@@ -1698,7 +1706,7 @@ class Game {
                         );
                         scoreRow.anchor.set(0.5, 0);
                         scoreRow.x = 0;
-                        scoreRow.y = 30 + (index * 35); // Increased spacing between entries (35px)
+                        scoreRow.y = 100 + (index * 35); // Tighten spacing between entries
                         leaderboardContainer.addChild(scoreRow);
                     });
                 } else {
@@ -1710,7 +1718,7 @@ class Game {
                     });
                     noScoresText.anchor.set(0.5, 0);
                     noScoresText.x = 0;
-                    noScoresText.y = 30;
+                    noScoresText.y = 100;
                     leaderboardContainer.addChild(noScoresText);
                 }
             })

@@ -30,6 +30,9 @@
 - [x] Add celebration effects for major achievements
 - [x] Add username selection screen
 - [x] Implement leaderboard system
+- [x] Add circular visual timer indicators for planets
+- [x] Ensure consistent fuel refill from all planets
+- [x] Fix Earth's timer indicator display
 
 ### AWS Deployment
 - [x] Create S3 bucket for static site hosting
@@ -73,6 +76,7 @@
 - [x] Add loading indicators for asynchronous operations
 - [x] Update spaceship with dedicated sprite images for normal and boost modes
 - [x] Improve leaderboard display with better spacing and background
+- [x] Replace planet emoji indicators with circular timers
 
 ### UX and Controls
 - [x] Optimize mobile controls
@@ -90,6 +94,7 @@
 - [x] Optimize portrait mode instructions with centered text
 - [x] Position game info optimally for different device sizes
 - [x] Improve game over screen with pilot name display
+- [x] Fix fuel refill messaging for all planets
 
 ### Optimization
 - [x] Improve frame rate on mobile
@@ -99,6 +104,7 @@
 - [x] Add animation system for visual effects
 - [x] Implement smooth camera transitions
 - [x] Fix game restart bugs and UI reset issues
+- [x] Fix orbit timing and fuel mechanics
 
 ## Future Development Tasks
 
@@ -187,4 +193,4 @@
 - Use API Gateway and Lambda for serverless backend
 - Add detailed comments for AWS configuration
 
-_Last updated: 2025-03-27_ 
+_Last updated: 2025-03-28_ 

@@ -10,6 +10,10 @@ This directory contains all the static files for the Escape Orbit game that will
 
 ## Recent Updates
 
+- Replaced planet emojis with visual circular timer indicators for planet visits
+- Fixed Earth's timer indicator to always display a full circle
+- Improved fuel mechanics to get 30 fuel from all planets including Earth
+- Added fuel refill notification messages for all planets including Earth
 - Updated spaceship graphics with new image assets (spaceship_noflames.png and spaceship_flames.png)
 - Improved game over screen with better leaderboard display and spacing
 - Removed username display from top left UI and moved it to the game over screen
@@ -63,4 +67,6 @@ For optimal mobile testing:
 - Test in both portrait and landscape orientations
 - Verify the leaderboard appears correctly in the portrait orientation instructions
 - Check that boundary detection works when flying outside the solar system
-- Ensure proper centering when rotating the device 
+- Ensure proper centering when rotating the device
+- Test fuel refill mechanics with all planets including Earth
+- Verify that visual timer indicators display correctly for visited planets 

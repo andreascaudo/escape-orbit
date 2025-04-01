@@ -408,13 +408,13 @@ class Spaceship {
 
             // If we're very close to the planet, get fuel regardless of visit status
             if (dist < planet.radius * 1.1) {
-                // Add fuel - always get fuel even if planet was visited
-                this.fuel += CONSTANTS.PLANET_REFUEL_AMOUNT;
-
                 // Check if we weren't inside this planet before
                 if (!this.currentlyInsidePlanets[planetId]) {
                     // Mark that we're now inside this planet
                     this.currentlyInsidePlanets[planetId] = true;
+
+                    // Fuel is now handled in game.js via addScoreForDirectPass
+                    // NOT adding fuel here to avoid double refueling
 
                     // Only proceed if we haven't recently passed through this planet
                     if (!this.recentPassedPlanets[planetId] && window.game) {
@@ -431,8 +431,9 @@ class Spaceship {
                             // Add direct pass score
                             window.game.addScoreForDirectPass(planet);
                         } else {
-                            // If planet already visited, just show a message about fuel refill (no points)
-                            window.game.showFuelRefillMessage(planet);
+                            // Always call addScoreForDirectPass to ensure fuel is added
+                            // This handles both the fuel refill and the message
+                            window.game.addScoreForDirectPass(planet);
                         }
                     }
                 }

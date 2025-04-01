@@ -833,6 +833,9 @@ class Game {
 
         // Mark the starting planet as visited
         this.planets[CONSTANTS.STARTING_PLANET].visitByOrbit();
+
+        // Ensure Earth's timer indicator is visible by forcing an update
+        this.planets[CONSTANTS.STARTING_PLANET].update();
     }
 
     createSpaceship() {
@@ -1230,22 +1233,32 @@ class Game {
             // Update the planet counter
             this.updatePlanetCounter();
         }
-        // Refuel even if already visited
-        this.spaceship.refuel(CONSTANTS.PLANET_REFUEL_AMOUNT);
+
+        // Always give exactly 30 fuel when passing through a planet
+        // First cap the fuel at its current value in case we're over 100 for some reason
+        this.spaceship.fuel = Math.min(CONSTANTS.MAX_FUEL, this.spaceship.fuel);
+        // Now add fuel, but make sure we don't exceed the maximum
+        const newFuel = Math.min(CONSTANTS.MAX_FUEL, this.spaceship.fuel + CONSTANTS.PLANET_REFUEL_AMOUNT);
+        // Set the new fuel value directly
+        this.spaceship.fuel = newFuel;
+
         this.showFuelRefillMessage(planet);
     }
 
     // Method to show fuel refill message for already visited planets
     showFuelRefillMessage(planet) {
-        // Don't show messages for the starting planet
+        // Display a specific message for Earth
         if (planet === this.planets[CONSTANTS.STARTING_PLANET]) {
+            // Show a message for Earth refueling
+            console.log(`Refueled from Earth`);
+            this.showMessage(`Refueled from Earth\n+${CONSTANTS.PLANET_REFUEL_AMOUNT} fuel`, 1500);
             return;
         }
 
-        console.log(`Refueled from ${planet.name} (already visited, no points)`);
+        console.log(`Refueled from ${planet.name}\n+${CONSTANTS.PLANET_REFUEL_AMOUNT} fuel`);
 
         // Show message about fuel refill without points
-        this.showMessage(`Refueled from ${planet.name}\n(No points - planet already visited)`, 1500);
+        this.showMessage(`\n\n\n\nRefueled from ${planet.name}\n+${CONSTANTS.PLANET_REFUEL_AMOUNT} fuel`, 1500);
     }
 
     // Method to add bonus score when entering orbit shortly after direct visit
@@ -1465,7 +1478,7 @@ class Game {
             saveLeaderboardEntry(this.username, this.score, this.maxPlanetsVisited)
                 .then(rank => {
                     // Update the game over text with the leaderboard rank
-                    let updatedText = this.messageText.text.replace('Saving to leaderboard...\n', 'Score saved to leaderboard!\n');
+                    let updatedText = this.messageText.text.replace('Saving to leaderboard...\n', '');
 
                     // Add leaderboard rank message based on rank
                     const clickTapIndex = updatedText.indexOf('Click/Tap');
@@ -1700,7 +1713,7 @@ class Game {
         // Draw a boundary around the solar system to help with orientation
         const outerPlanetDistance = CONSTANTS.PLANETS[CONSTANTS.PLANETS.length - 1].orbitRadius;
         // Make the boundary slightly larger to accommodate the larger orbits
-        const boundaryRadius = outerPlanetDistance * 1.5;
+        const boundaryRadius = outerPlanetDistance * 1.25;
 
         // Create a boundary circle
         if (!this.boundary) {

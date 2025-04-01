@@ -22,9 +22,11 @@ Core gameplay mechanics are in place and the game is playable with all essential
 - [x] Hazards: meteors and black holes
 - [x] Satellite fuel pods (🛰️) for refueling
 - [x] Score tracking with bonus system
-- [x] Visual indicators for visited planets (🪂)
+- [x] Visual indicators for visited planets (circular markers)
 - [x] Sun proximity danger and burning effect
 - [x] Strategic scoring: bonus for quick orbit after passing through a planet
+- [x] Visual timer indicators for planet visitation
+- [x] Consistent fuel refill mechanics (30 fuel from all planets)
 
 #### UI and Visuals
 - [x] Dynamic zoom levels
@@ -40,6 +42,7 @@ Core gameplay mechanics are in place and the game is playable with all essential
 - [x] Warning indicators for sun proximity
 - [x] Username input screen
 - [x] Leaderboard display
+- [x] Circular timer indicators for planet visitation
 
 #### Controls
 - [x] Desktop mouse & keyboard controls
@@ -75,6 +78,10 @@ Core gameplay mechanics are in place and the game is playable with all essential
 - [x] Error handling and logging for troubleshooting
 
 #### Recent Enhancements
+- [x] Added circular visual timer indicators for visited planets
+- [x] Fixed Earth's timer indicator to always display a full circle
+- [x] Improved fuel mechanics to provide 30 fuel from all planets (including Earth)
+- [x] Fixed messaging system to show fuel refill notifications for all planets
 - [x] Updated spaceship graphics with dedicated sprite images 
 - [x] Improved game over screen with better leaderboard display
 - [x] Enhanced mobile UI with repositioned elements for better gameplay

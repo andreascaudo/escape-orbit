@@ -11,12 +11,14 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
   - 50 BONUS points for entering orbit within 5 seconds after flying through a planet
   - 1000 COSMIC ACHIEVEMENT points for visiting all planets
 - **Failure Conditions**: Running out of fuel, colliding with a meteor, being consumed by a black hole, or getting incinerated by the sun
-- **Visual Indicators**: Planets show 🪂 when visited by orbit
+- **Visual Indicators**: Planets show circular markers when visited by orbit
 
 ## Game Mechanics
 
 - **Orbit**: Your spaceship automatically orbits planets when close enough. Orbit radius adapts to your approach distance!
 - **Fuel Management**: Orbiting drains fuel slowly, boosting costs fuel
+- **Refueling**: Pass through any planet (including Earth) to receive 30 fuel points
+- **Visual Timers**: Circular timer indicators show time since your last visit
 - **Trajectory Prediction**: See your predicted flight path when leaving orbit
 - **Planet Visits**: Fly through planets for points and fuel, or enter orbit for strategic advantages
 - **Hazards**: Avoid meteors, black holes, and the sun's intense radiation
@@ -60,7 +62,10 @@ A 2D web-based space game where you control a spaceship orbiting planets. The go
 
 ## Recent Updates
 
+- Added circular visual timer indicators for planets instead of emojis
 - Updated spaceship graphics with dedicated sprite images
+- Improved fuel mechanics - all planets (including Earth) now provide 30 fuel
+- Fixed timer display to show immediately when entering orbit
 - Improved game over screen with leaderboard and player name
 - Repositioned UI elements based on device type (desktop/mobile)
 - Increased font size on desktop for better readability

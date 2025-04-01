@@ -104,37 +104,33 @@ class Planet {
         sprite.drawCircle(0, 0, this.radius);
         sprite.endFill();
 
-        // If this planet was visited by orbit, show parachute emoji
+        // If this planet was visited by orbit, show a dark circle marker instead of an emoji
         if (this.visited) {
             try {
-                // Create a text object with parachute emoji
-                if (!this.parachuteEmoji) {
-                    this.parachuteEmoji = new PIXI.Text('🏡', {
-                        fontFamily: 'Arial',
-                        fontSize: this.radius * 0.5,
-                        align: 'center'
-                    });
-                    this.parachuteEmoji.anchor.set(0.5);
-                    // Add the emoji to the sprite
-                    sprite.addChild(this.parachuteEmoji);
-                } else {
-                    // Update size if planet size changes
-                    this.parachuteEmoji.style.fontSize = this.radius * 0.5;
-                }
-                console.log(`Parachute emoji shown for ${this.name}`);
+                // Calculate a darker shade of the planet's color
+                let darkColor = this.color;
+
+                // Create darker shade by reducing color values by 50%
+                const r = ((darkColor >> 16) & 0xFF);
+                const g = ((darkColor >> 8) & 0xFF);
+                const b = (darkColor & 0xFF);
+
+                // Recombine into a single color value
+                darkColor = (Math.floor(r) << 16) | (Math.floor(g) << 8) | Math.floor(b);
+
+                // Draw a dark circle in the middle of the planet
+                sprite.beginFill(darkColor);
+                sprite.drawCircle(0, 0, this.radius * 0.3); // Circle is 30% of planet radius
+                sprite.endFill();
+
+                console.log(`Visit marker shown for ${this.name}`);
             } catch (error) {
-                console.error('Error adding parachute emoji:', error);
+                console.error('Error adding visit marker:', error);
                 // Fallback to a simple shape
                 sprite.beginFill(0xFFFFFF);
                 sprite.drawCircle(0, 0, this.radius * 0.2);
                 sprite.endFill();
             }
-        }
-
-        // Clean up emojis if they shouldn't be displayed
-        if (!this.orbitVisited && this.parachuteEmoji && sprite.children.includes(this.parachuteEmoji)) {
-            sprite.removeChild(this.parachuteEmoji);
-            this.parachuteEmoji = null;
         }
 
         // Set position
@@ -233,8 +229,25 @@ class Planet {
             }
         }
 
+        // For Earth (starting planet), always ensure the timer indicator is visible if visited
+        if (this.isStartingPlanet && this.visited) {
+            // Always redraw Earth's timer indicator as a full circle
+            this.timerIndicator.clear();
+            this.timerIndicator.lineStyle(3, this.color, 1);
+            this.timerIndicator.arc(
+                0, 0, // Center of the circle
+                this.radius + 8, // Radius of the timer circle
+                0, // Start angle
+                Math.PI * 2, // Full circle
+                false // counterclockwise
+            );
+
+            // Position the timer indicator
+            this.timerIndicator.x = this.x;
+            this.timerIndicator.y = this.y;
+        }
         // Handle visit timer if active and not the starting planet
-        if (this.visitTimerActive && !this.isStartingPlanet) {
+        else if (this.visitTimerActive && !this.isStartingPlanet) {
             this.visitTimer--;
 
             // Update the timer indicator
@@ -244,6 +257,10 @@ class Planet {
             if (this.visitTimer <= 0) {
                 this.resetVisitedStatus();
             }
+        }
+        // If timer is not active but has been initialized, still update the display
+        else if (this.visitTimer > 0 && !this.visitTimerActive) {
+            this.updateTimerIndicator();
         }
     }
 
@@ -315,26 +332,47 @@ class Planet {
 
     // Mark as visited by orbiting
     visitByOrbit() {
-        if (!this.orbitVisited) {
-            console.log(`Visited planet by orbit: ${this.name}`);
-            this.orbitVisited = true;
-            this.visited = true; // Also mark as generally visited
-            this.needsUpdate = true;
+        // Always mark as visited and reset the visit status
+        console.log(`Visited planet by orbit: ${this.name}`);
+        this.orbitVisited = true;
+        this.visited = true;
+        this.needsUpdate = true;
 
-            // Don't start the timer here - it will be started when exiting orbit
+        // Special handling for Earth (starting planet)
+        if (this.isStartingPlanet) {
+            // For Earth, explicitly draw the timer indicator as a full circle
+            this.timerIndicator.clear();
+            this.timerIndicator.lineStyle(3, this.color, 1);
+            this.timerIndicator.arc(
+                0, 0, // Center of the circle
+                this.radius + 8, // Radius of the timer circle
+                0, // Start angle
+                Math.PI * 2, // Full circle
+                false // counterclockwise
+            );
+
+            // Position the timer indicator
+            this.timerIndicator.x = this.x;
+            this.timerIndicator.y = this.y;
+
+            console.log(`Timer indicator drawn for Earth (starting planet)`);
+            return;
         }
+
+        // For other planets - normal behavior
+        // If the timer was active, stop it and reset to full duration
+        if (this.visitTimerActive) {
+            this.visitTimerActive = false;
+            console.log(`Paused countdown for ${this.name} while in orbit`);
+        }
+
+        // Always reinitialize the timer indicator to show a full circle
+        this.initializeTimerIndicator();
     }
 
     // Clean up resources when the planet is removed
     destroy() {
-        if (this.parachuteEmoji) {
-            if (this.sprite && this.sprite.children.includes(this.parachuteEmoji)) {
-                this.sprite.removeChild(this.parachuteEmoji);
-            }
-            this.parachuteEmoji = null;
-        }
-
-        // Clean up other PIXI objects if needed
+        // Clean up PIXI objects
         if (this.orbitIndicator) {
             this.orbitIndicator.clear();
         }
@@ -382,11 +420,58 @@ class Planet {
         return texture;
     }
 
+    // Method to initialize the timer indicator without starting the countdown
+    initializeTimerIndicator() {
+        // For starting planet (Earth), just show the visual indicator but don't set up for countdown
+        if (this.isStartingPlanet) {
+            // Draw the timer indicator showing full time
+            this.timerIndicator.clear();
+            this.timerIndicator.lineStyle(3, this.color, 1);
+            this.timerIndicator.arc(
+                0, 0, // Center of the circle
+                this.radius + 8, // Radius of the timer circle
+                0, // Start angle
+                Math.PI * 2, // Full circle for initial display
+                false // counterclockwise
+            );
+
+            // Position the timer indicator
+            this.timerIndicator.x = this.x;
+            this.timerIndicator.y = this.y;
+
+            console.log(`Timer indicator initialized for Earth (permanent display)`);
+            return;
+        }
+
+        // For other planets - normal behavior
+        // Set the timer duration but don't activate it yet
+        this.visitTimer = this.visitDuration;
+        this.visitTimerActive = false; // Keep it inactive for now
+
+        // Draw the timer indicator showing full time
+        this.timerIndicator.clear();
+        this.timerIndicator.lineStyle(3, this.color, 1);
+        this.timerIndicator.arc(
+            0, 0, // Center of the circle
+            this.radius + 8, // Radius of the timer circle
+            0, // Start angle
+            Math.PI * 2, // Full circle for initial display
+            false // counterclockwise
+        );
+
+        // Position the timer indicator
+        this.timerIndicator.x = this.x;
+        this.timerIndicator.y = this.y;
+
+        console.log(`Timer indicator initialized for ${this.name} but countdown not started.`);
+    }
+
     // Method to update the timer indicator
     updateTimerIndicator() {
         this.timerIndicator.clear();
 
-        if (this.visitTimerActive && this.visitTimer > 0) {
+        // Show the timer whether it's active or not, as long as we have a visit timer set
+        if (this.visitTimer > 0) {
             // Calculate timer percentage
             const percentage = this.visitTimer / this.visitDuration;
 
@@ -422,10 +507,21 @@ class Planet {
     // Method to start the visit timer
     startVisitTimer() {
         // Don't start timer for starting planet (Earth)
-        if (this.isStartingPlanet) return;
+        if (this.isStartingPlanet) {
+            console.log(`Timer countdown never starts for Earth`);
+            return;
+        }
 
-        this.visitTimer = this.visitDuration;
+        // Only set the duration if it hasn't been initialized already
+        if (this.visitTimer <= 0) {
+            this.visitTimer = this.visitDuration;
+        }
+
+        // Activate the timer to start the countdown
         this.visitTimerActive = true;
+        console.log(`Visit timer countdown started for ${this.name}`);
+
+        // Update the visual indicator
         this.updateTimerIndicator();
     }
 

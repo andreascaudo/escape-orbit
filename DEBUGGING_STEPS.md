@@ -78,6 +78,51 @@ npm run deploy
 # Then redeploy your frontend to S3
 ```
 
+# Debugging Game Mechanics
+
+## Visual Timer Indicators
+
+If you're experiencing issues with the visual timer indicators for planets:
+
+1. **Timer Doesn't Appear for Earth**:
+   - Check the initialization in `frontend/js/game.js` to ensure Earth's timer is properly initialized
+   - Verify that the `initializeTimerIndicator` method is being called for Earth
+   - If using the console, look for "Silently refueled from Earth" messages
+
+2. **Timer Not Updating Correctly**:
+   - Examine the `update` method in `frontend/js/objects/planet.js`
+   - Ensure the timer indicator graphics are being properly drawn and updated
+   - Verify that the timer countdown starts when exiting orbit, not when entering
+
+3. **Timer Graphics Appearing Incorrectly**:
+   - Check the `createTimerIndicator` method to ensure proper radius calculations
+   - Verify that the circle is being drawn with the correct color and alpha values
+   - Check if the indicator is properly positioned relative to the planet
+
+## Fuel Refill Mechanics
+
+If you're having issues with the fuel refill when passing through planets:
+
+1. **No Fuel Added When Passing Through Planets**:
+   - Check the `addScoreForDirectPass` method in `frontend/js/game.js`
+   - Verify that `showFuelRefillMessage` is being called
+   - Examine the `checkOrbit` method in `frontend/js/objects/spaceship.js` to ensure proper logic flow
+
+2. **No Fuel Added When Passing Through Earth**:
+   - Ensure the Earth planet is correctly calling `addScoreForDirectPass` rather than just `showFuelRefillMessage`
+   - Check console logs for "Refueled from Earth" messages
+   - Verify that the logic in `spaceship.js` is not excluding Earth from refueling
+
+3. **Receiving Too Much Fuel**:
+   - Check if refueling logic is being called multiple times per pass
+   - Verify the `currentlyInsidePlanets` tracking in `checkOrbit` is working correctly
+   - Ensure the `PLANET_REFUEL_AMOUNT` constant is set correctly in `frontend/js/constants.js`
+
+4. **No Refill Message Appears**:
+   - Check the `showFuelRefillMessage` method to ensure it's creating visible messages
+   - Verify that any conditional logic for message display is working correctly
+   - Ensure the message queue system is not being blocked by other messages
+
 ## Common Issues and Solutions
 
 1. **AWS Region Mismatch**: Ensure all references to AWS regions match.
@@ -86,6 +131,8 @@ npm run deploy
 4. **Lambda IAM Permissions**: Verify that your Lambda function has permissions to access DynamoDB.
 5. **Browser Cache**: Old JavaScript files might be cached, showing outdated behavior.
 6. **Local Storage Fallback**: The code correctly falls back to localStorage when the API fails, which might mask the underlying issue.
+7. **Planet Visitation Logic**: The same planet might be counted multiple times if event tracking is incorrect.
+8. **Fuel Refill Double-Counting**: Ensure fuel is only added once when passing through a planet.
 
 ## Testing After Fixes
 
@@ -95,5 +142,7 @@ After applying fixes:
 3. Play a round and check if your score appears in the DynamoDB table
 4. Use the AWS Console to view the DynamoDB table directly
 5. Monitor CloudWatch logs for any errors
+6. Test passing through planets to verify fuel refill mechanics
+7. Check that timer indicators appear and update correctly
 
-If you still encounter issues, review the Lambda logs in detail for specific error messages. 
+If you still encounter issues, review the console logs for specific error messages. 

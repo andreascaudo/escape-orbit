@@ -50,3 +50,9 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local 
+promo/gameplay_escapeorbit.mov
+promo/homescreen.png
+frontend/images/twitter_banner_original.png
+frontend/images/twitter_banner.png
+private_key.pem
+public_key.pem
